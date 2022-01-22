@@ -4,8 +4,7 @@
 #include <stdint.h>
 
 // 60 bytes
-struct joint_command
-{
+struct joint_command {
     float      q_des_a[2];
     float      q_des_b[2];
     float      q_des_c[2];
@@ -31,8 +30,7 @@ struct joint_command
 };
 
 // 132 bytes
-struct joint_data
-{
+struct joint_data {
     float q_a[2];
     float q_b[2];
     float q_c[2];
