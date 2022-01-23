@@ -4,7 +4,6 @@
 #include <FlexCAN_T4.h>
 #include "joint_message.h"
 
-#define PI 3.141593f
 #define RPM_TO_RPS 0.104720  // convert rpm to radian per sec
 #define DEG_TO_RADIAN 0.017453  // PI/180, convert degree to radian
 #define CURRENT_SCALING 43  // 62.06 /* 2048 / 33A */
