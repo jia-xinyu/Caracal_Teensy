@@ -269,7 +269,7 @@ void can_task(struct motor_args *args_m)) {
   // check CAN txqsize
   // size_t x = sizeof(args_m->setpoint_msgs);
   // Serial.print("Size of setpoints is ");
-  // Serial.println("x");
+  // Serial.println(x);
 
   //------------------------------------------------------------------------
   

@@ -1,5 +1,4 @@
-#include <NativeEthernet.h>
-#include <NativeEthernetUdp.h>
+#include "UDP_PC.h"
 #include "RMD_Motor.h"
 
 void setup() {
@@ -10,7 +9,7 @@ void setup() {
   Serial.begin(9600); delay(400);
 
   // start the Ethernet
-  Ethernet.begin(mac, ip);
+  udp_init();
   
   // start 3 CAN BUS
   can_init();

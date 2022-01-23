@@ -1,7 +1,10 @@
 #ifndef UDP_PC_H
 #define UDP_PC_H
 
-#include <FlexCAN_T4.h>
-#include "joint_message.h"
+#include <NativeEthernet.h>
+#include <NativeEthernetUdp.h>
+
+void udp_init();
+void udp_task();
 
 #endif
