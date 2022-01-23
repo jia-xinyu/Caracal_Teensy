@@ -9,6 +9,10 @@
 #define DEG_TO_RADIAN 0.017453  // PI/180, convert degree to radian
 #define CURRENT_SCALING 43  // 62.06 /* 2048 / 33A */
 
+// #define ESTOP  // turn ESTOP on or off
+// #define PRINT_DATA  // turn print on or off
+#define PRINT_ERROR
+
 // Joint Safety Limits
 //[TO DO]
 
@@ -35,7 +39,6 @@ struct motor_args {
   // CAN msgs for sending requests, receiving responses
   CAN_message_t req_msgs_vel[3];
   CAN_message_t req_msgs_pos[3];
-  CAN_message_t res_msgs[MAX_READ];
 
   // CAN msgs for sending setpoints
   struct setpoint_msgs setpoint_msgs;
@@ -51,5 +54,6 @@ struct motor_args {
 };
 
 void can_init();
+void can_task(struct motor_args *args_m);
 
 #endif
