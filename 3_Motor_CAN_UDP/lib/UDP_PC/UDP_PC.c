@@ -1,5 +1,5 @@
 /*
- * Ethernet/UDP server to communicate to remote PC where recommended Network settings are
+ * Ethernet/UDP server to communicate to a remote PC client where recommended settings are
  * remote IP - 192.168.137.178
  * remote Netmask - 255.0.0.0
  * 

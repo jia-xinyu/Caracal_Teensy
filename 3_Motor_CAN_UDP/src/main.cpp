@@ -61,7 +61,7 @@ void setup() {
   // create 2 threads
   portBASE_TYPE s1, s2;
 
-    // create task at priority 1
+  // create task at priority 1
   s1 = xTaskCreate(runUDP, NULL, configMINIMAL_STACK_SIZE, NULL, 1, NULL);
 
   // create task at priority 1

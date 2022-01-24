@@ -34,12 +34,12 @@ void estop() {
 
 // Get CAN command pointer
 joint_command *get_can_command() {
-	return &args_motor.joint_CMD;
+  return &args_motor.joint_CMD;
 }
 
 // Get CAN data pointer
 joint_data *get_can_data() {
-	return &args_motor.joint_DATA; 
+  return &args_motor.joint_DATA; 
 }
 
 //------------------------------------------------------------------------

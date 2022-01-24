@@ -5,7 +5,7 @@
 #include <NativeEthernetUdp.h>
 #include "joint_message.h"
 
-#define RX_MAX_SIZE 260
+#define RX_MAX_SIZE 260  // original is 24
 #define PRINT_SIZE
 
 struct low2high {
