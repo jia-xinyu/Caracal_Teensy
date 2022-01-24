@@ -1,6 +1,6 @@
 #include <FreeRTOS_TEENSY4.h>
-#include "UDP_PC.h"
-#include "RMD_Motor.h"
+#include "UDP_PC.hpp"
+#include "RMD_Motor.hpp"
 
 joint_command _canCommand;
 joint_data _canData;
