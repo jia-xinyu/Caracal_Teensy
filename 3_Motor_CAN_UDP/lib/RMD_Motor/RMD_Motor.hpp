@@ -9,25 +9,19 @@
 #define CURRENT_SCALING 43  // 62.06 /* 2048 / 33A */
 
 // #define ESTOP  // turn ESTOP on or off
-// #define PRINT_DATA  // turn print on or off
+#define PRINT_DATA  // turn print on or off
 #define PRINT_ERROR
-
-// CAN msgs for sending setpoints
-struct setpoint_msgs {
-  CAN_message_t setpoints_a[3];
-  CAN_message_t setpoints_b[3];
-  CAN_message_t setpoints_c[3];
-};
 
 // data struct for passing data
 struct motor_args {
   // CAN msgs for sending requests, receiving responses
   CAN_message_t req_msgs_vel[3];
   CAN_message_t req_msgs_pos[3];
-  // CAN_message_t res_msgs[MAX_READ];
   
   // CAN msgs for sending setpoints
-  struct setpoint_msgs setpoint_msgs;
+  CAN_message_t setpoints_a[3];
+  CAN_message_t setpoints_b[3];
+  CAN_message_t setpoints_c[3];
 
   // join command and joint data
   joint_command joint_CMD;
