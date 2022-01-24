@@ -5,8 +5,8 @@
 #include <NativeEthernetUdp.h>
 #include "joint_message.hpp"
 
-#define RX_MAX_SIZE 200  // original is 24
-#define TX_MAX_SIZE 200  // original is 24
+#define RX_MAX_SIZE 48  // 24
+#define TX_MAX_SIZE 150  // 24
 #define PRINT_SIZE
 
 struct imu_data {
