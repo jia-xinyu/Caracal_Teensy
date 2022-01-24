@@ -46,6 +46,9 @@ joint_data *get_can_data() {
 
 // init CAN BUS
 void can_init() {
+  // flush
+  memset(&args_motor, 0, sizeof(struct motor_args));
+
   can1.begin();
   can1.setBaudRate(1000000);  // 1 Mbps
   can1.setMaxMB(16);  // up to 64 mailbox on Teensy 4

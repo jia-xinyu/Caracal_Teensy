@@ -18,17 +18,17 @@ EthernetUDP udp;  // an EthernetUDP instance
 
 // buffers for receiving and sending data
 char recv_buffer[RX_MAX_SIZE];
-char send_buffer[];
+char send_buffer[TX_MAX_SIZE];
 
 struct udp_args args_udp;
 
 // Get UDP rx pointer
-high2low* recv_ethernet_command() {
+high2low *recv_ethernet_command() {
  	return &args_udp.msgs_cmd;
 }
 
 // Get UDP tx pointer
-low2high* send_ethernet_data() {
+low2high *send_ethernet_data() {
 	return &args_udp.msgs_data;
 }
 
@@ -36,6 +36,10 @@ low2high* send_ethernet_data() {
 
 // init UDP
 void udp_init() {
+  // flush
+  memset(&args_udp, 0, sizeof(struct udp_args));
+  memset(&send_buffer, 0, TX_MAX_SIZE*sizeof(uint8_t));
+
   Ethernet.init(10);  // Most Arduino shields
   Ethernet.begin(mac, ip);
 
@@ -63,7 +67,7 @@ void server_task(struct udp_args *args_u) {
     Serial.print("Received packet of size "); Serial.println(packetSize);
     Serial.print("From ");
     IPAddress remote = udp.remoteIP();
-    for (int i=0; i < 4; i++) {
+    for (int i = 0; i < 4; i++) {
       Serial.print(remote[i], DEC);
       if (i < 3) {
         Serial.print(".");

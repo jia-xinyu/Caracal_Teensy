@@ -5,8 +5,15 @@
 #include <NativeEthernetUdp.h>
 #include "joint_message.h"
 
-#define RX_MAX_SIZE 260  // original is 24
+#define RX_MAX_SIZE 200  // original is 24
+#define TX_MAX_SIZE 200  // original is 24
 #define PRINT_SIZE
+
+struct imu_data {
+  float accel[3];
+  float gyro[3];  // x y z
+  float quat[4];  // i,j,k,real
+};
 
 struct low2high {
   joint_data _joint_data;
@@ -27,7 +34,7 @@ struct udp_args {
 
 void udp_init();
 void udp_task();
-high2low* recv_udp_command();
-low2high* send_udp_data();
+high2low *recv_udp_command();
+low2high *send_udp_data();
 
 #endif

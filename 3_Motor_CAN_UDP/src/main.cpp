@@ -2,8 +2,8 @@
 #include "UDP_PC.h"
 #include "RMD_Motor.h"
 
-joint_command *_canCommand;
-joint_data *_canData;
+joint_command _canCommand;
+joint_data _canData;
 
 static void runCANBUS(void* arg) {
   while (1) {
@@ -16,9 +16,9 @@ static void runCANBUS(void* arg) {
     joint_data *data = get_can_data();
 
     // copy command to CAN BUS, compute, send data to UDP
-    memcpy(cmd, &_canCommand, sizeof(joint_command));
+    memcpy(&cmd, &_canCommand, sizeof(joint_command));
     can_task();
-    memcpy(&_canData, data, sizeof(joint_data));
+    memcpy(&_canData, &data, sizeof(joint_data));
   }
 }
 
@@ -54,8 +54,9 @@ void setup() {
 
   //------------------------------------------------------------------------
   // clear dirty command & data before sending
-  memcpy(&_canCommand, 0, sizeof(joint_command));
-  memcpy(&_canData, 0, sizeof(joint_data));
+  memset(&_canCommand, 0, sizeof(joint_command));
+  memset(&_canData, 0, sizeof(joint_data));
+  // memset(&_imuData, 0, sizeof(imu_data));
 
   //------------------------------------------------------------------------
   // create 2 threads
