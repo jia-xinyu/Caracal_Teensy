@@ -1,0 +1,18 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../2_UDP"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.tpp": "cpp",
+			"array": "cpp",
+			"string": "cpp",
+			"*.tcc": "c"
+		}
+	}
+}

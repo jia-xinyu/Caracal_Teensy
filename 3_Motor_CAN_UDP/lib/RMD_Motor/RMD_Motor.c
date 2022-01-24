@@ -32,18 +32,20 @@ void estop() {
   #endif
 }
 
-// print error messages
-void print_err(char action[], char info[]) {
-  #ifdef PRINT_ERROR
-  Serial.print("[MOTOR-CAN-TASK]: Fail to ");
-  Serial.print(action); Serial.print(" "); Serial.print(info);
-  Serial.println(" msgs, to exit task");
-  #endif
+// Get CAN command pointer
+joint_command *get_can_command() {
+	return &args_motor.joint_CMD;
 }
 
+// Get CAN data pointer
+joint_data *get_can_data() {
+	return &args_motor.joint_DATA; 
+}
 
+//------------------------------------------------------------------------
+
+// init CAN BUS
 void can_init() {
-  // init CAN BUS
   can1.begin();
   can1.setBaudRate(1000000);  // 1 Mbps
   can1.setMaxMB(16);  // up to 64 mailbox on Teensy 4
@@ -94,28 +96,28 @@ void control_comp(struct motor_args *args_m) {
   // PD control law: tau = tau_ff + kp * (q_des-q_data) + kd * (qd_des-qd_data)
   for (int i = 0; i < 3; i++) {
     // ESTOP if over angle limit
-		if ((args_m->datas.q_a[i]<min_a[i]) || (args_m->datas.q_a[i]>max_a[i]))  estop();
-		if ((args_m->datas.q_b[i]<min_b[i]) || (args_m->datas.q_b[i]>max_b[i]))  estop();
-		if ((args_m->datas.q_c[i]<min_c[i]) || (args_m->datas.q_c[i]>max_c[i]))  estop();
+		if ((args_m->joint_DATA.q_a[i]<min_a[i]) || (args_m->joint_DATA.q_a[i]>max_a[i]))  estop();
+		if ((args_m->joint_DATA.q_b[i]<min_b[i]) || (args_m->joint_DATA.q_b[i]>max_b[i]))  estop();
+		if ((args_m->joint_DATA.q_c[i]<min_c[i]) || (args_m->joint_DATA.q_c[i]>max_c[i]))  estop();
     
     // Joint A
-    args_m->torq_input.tau_a[i] = args_m->setpoints.tau_a_ff[i] + \
-    (args_m->setpoints.kp_a[i]) * (args_m->setpoints.q_des_a[i] - args_m->datas.q_a[i]) + \
-    (args_m->setpoints.kd_a[i]) * (args_m->setpoints.qd_des_a[i] - args_m->datas.qd_a[i]);
+    args_m->torq_input.tau_a[i] = args_m->joint_CMD.tau_a_ff[i] + \
+    (args_m->joint_CMD.kp_a[i]) * (args_m->joint_CMD.q_des_a[i] - args_m->joint_DATA.q_a[i]) + \
+    (args_m->joint_CMD.kd_a[i]) * (args_m->joint_CMD.qd_des_a[i] - args_m->joint_DATA.qd_a[i]);
     
     args_m->torq_input.tau_a[i] = args_m->torq_input.tau_a[i] * side_a[i];
 
     // Joint B
-    args_m->torq_input.tau_b[i] = args_m->setpoints.tau_b_ff[i] + \
-    (args_m->setpoints.kp_b[i]) * (args_m->setpoints.q_des_b[i] - args_m->datas.q_b[i]) + \
-    (args_m->setpoints.kd_b[i]) * (args_m->setpoints.qd_des_b[i] - args_m->datas.qd_bp[i]);
+    args_m->torq_input.tau_b[i] = args_m->joint_CMD.tau_b_ff[i] + \
+    (args_m->joint_CMD.kp_b[i]) * (args_m->joint_CMD.q_des_b[i] - args_m->joint_DATA.q_b[i]) + \
+    (args_m->joint_CMD.kd_b[i]) * (args_m->joint_CMD.qd_des_b[i] - args_m->joint_DATA.qd_bp[i]);
 
     args_m->torq_input.tau_b[i] = args_m->torq_input.tau_b[i] * side_b[i];
 
     // Joint C
-    args_m->torq_input.tau_c[i] = args_m->setpoints.tau_c_ff[i] + \
-    (args_m->setpoints.kp_c[i]) * (args_m->setpoints.q_des_c[i] - args_m->datas.q_c[i]) + \
-    (args_m->setpoints.kd_c[i]) * (args_m->setpoints.qd_des_c[i] - args_m->datas.qd_c[i]);
+    args_m->torq_input.tau_c[i] = args_m->joint_CMD.tau_c_ff[i] + \
+    (args_m->joint_CMD.kp_c[i]) * (args_m->joint_CMD.q_des_c[i] - args_m->joint_DATA.q_c[i]) + \
+    (args_m->joint_CMD.kd_c[i]) * (args_m->joint_CMD.qd_des_c[i] - args_m->joint_DATA.qd_c[i]);
 
     args_m->torq_input.tau_c[i] = args_m->torq_input.tau_c[i] * side_c[i];	
   }
@@ -238,8 +240,17 @@ int request_all(CAN_message_t tx_msgs[3]) {
   }
 }
 
+// print error messages
+void print_err(char action[], char info[]) {
+  #ifdef PRINT_ERROR
+  Serial.print("[MOTOR-CAN-TASK]: Fail to ");
+  Serial.print(action); Serial.print(" "); Serial.print(info);
+  Serial.println(" msgs, to exit task");
+  #endif
+}
+
 // main function
-void can_task(struct motor_args *args_m)) {
+void task_fun(struct motor_args *args_m) {
   int err;
   int err1, err2, err3;
 
@@ -254,7 +265,6 @@ void can_task(struct motor_args *args_m)) {
   // read responses from canSniff functions
   
   //------------------------------------------------------------------------
-
   // do control computations and pack torque command to CAN msgs
   control_comp(args_m);
   pack_torque_cmd(args_m);
@@ -268,11 +278,10 @@ void can_task(struct motor_args *args_m)) {
 
   // check CAN txqsize
   // size_t x = sizeof(args_m->setpoint_msgs);
-  // Serial.print("Size of setpoints is ");
+  // Serial.print("Size of joint_CMD is ");
   // Serial.println(x);
 
   //------------------------------------------------------------------------
-  
   // send msgs
   err1 = can1.write(args_m->setpoint_msgs.setpoints_a[0]);
   err2 = can2.write(args_m->setpoint_msgs.setpoints_a[1]);
@@ -287,17 +296,22 @@ void can_task(struct motor_args *args_m)) {
   err3 = can3.write(args_m->setpoint_msgs.setpoints_c[2]);
 }
 
+// run CAN BUS in main.cpp
+void can_task() {
+  task_fun(&args_motor);
+}
+
 // Callback CAN1
 void canSniff_1(const CAN_message_t res_msgs_1) {  // 
-  unpack_reply(&res_msgs_1, &args_motor->joint_data, &args_motor->torq_output, 1);				
+  unpack_reply(&res_msgs_1, &args_motor.joint_DATA, &args_motor.torq_output, 1);				
 }
 
 // Callback CAN1
 void canSniff_2(const CAN_message_t res_msgs_2) {  // 
-  unpack_reply(&res_msgs_2, &args_motor->joint_data, &args_motor->torq_output, 2);				
+  unpack_reply(&res_msgs_2, &args_motor.joint_DATA, &args_motor.torq_output, 2);				
 }
 
 // Callback CAN1
 void canSniff_3(const CAN_message_t res_msgs_3) {  // 
-  unpack_reply(&res_msgs_3, &args_motor->joint_data, &args_motor->torq_output, 3);				
+  unpack_reply(&res_msgs_3, &args_motor.joint_DATA, &args_motor.torq_output, 3);				
 }

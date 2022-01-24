@@ -38,13 +38,14 @@ struct motor_args {
   // CAN msgs for sending requests, receiving responses
   CAN_message_t req_msgs_vel[3];
   CAN_message_t req_msgs_pos[3];
-
+  // CAN_message_t res_msgs[MAX_READ];
+  
   // CAN msgs for sending setpoints
   struct setpoint_msgs setpoint_msgs;
 
   // join command and joint data
-  joint_command setpoints;
-  joint_data datas;
+  joint_command joint_CMD;
+  joint_data joint_DATA;
 
   // final joint torque to motor
   struct torq_msgs torq_input;
@@ -53,6 +54,8 @@ struct motor_args {
 };
 
 void can_init();
-void can_task(struct motor_args *args_m);
+void can_task();
+joint_command *get_can_command();
+joint_data *get_can_data();
 
 #endif
