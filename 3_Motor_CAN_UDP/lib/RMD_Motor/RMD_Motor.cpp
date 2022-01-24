@@ -10,10 +10,10 @@
 
 struct motor_args args_motor;
 
-// 3 CAN BUS
-FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> can1;
-FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can2;
-FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> can3;
+// 3 CAN BUS, define buffer size
+FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_32> can1;
+FlexCAN_T4<CAN2, RX_SIZE_64, TX_SIZE_32> can2;
+FlexCAN_T4<CAN3, RX_SIZE_64, TX_SIZE_32> can3;
 
 // arm or leg coordinate should match the motor rotation direction
 float side_a[3] = {1, 1, 1};
@@ -181,7 +181,7 @@ void can_init() {
   can1.enableFIFO();  // MB0 callback will be assigned and fired for reception
   can1.enableFIFOInterrupt();  // to be interrupt rather than polling in the loop
   can1.onReceive(FIFO, canSniff_1);  // only allow FIFO messages
-  // can1.mailboxStatus();
+  can1.mailboxStatus();
 
   can2.begin();
   can2.setBaudRate(1000000);
@@ -189,7 +189,7 @@ void can_init() {
   can2.enableFIFO();
   can2.enableFIFOInterrupt();
   can2.onReceive(FIFO, canSniff_2);
-  // can2.mailboxStatus();
+  can2.mailboxStatus();
 
   can3.begin();
   can3.setBaudRate(1000000);
@@ -197,7 +197,7 @@ void can_init() {
   can3.enableFIFO();
   can3.enableFIFOInterrupt();
   can3.onReceive(FIFO, canSniff_3);
-  // can3.mailboxStatus();
+  can3.mailboxStatus();
 
   // init req msgs
   // 0x92 is the command for getting the multi turns angle

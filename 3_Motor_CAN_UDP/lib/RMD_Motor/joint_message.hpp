@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-// 48 Bytes
+// 48 bytes = 24 uint16_t
 struct joint_command {
     float tau_a_des[3];
     float tau_b_des[3];
@@ -13,7 +13,7 @@ struct joint_command {
     // int32_t checksum;
 };
 
-// 108 Bytes
+// 108 bytes = 54 uint16_t
 struct joint_data {
     float q_a[3];
     float q_b[3];
