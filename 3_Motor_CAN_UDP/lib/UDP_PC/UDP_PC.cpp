@@ -23,12 +23,12 @@ char send_buffer[TX_MAX_SIZE];
 struct udp_args args_udp;
 
 // Get UDP rx pointer
-high2low *recv_ethernet_command() {
+high2low *recv_udp_command() {
  	return &args_udp.msgs_cmd;
 }
 
 // Get UDP tx pointer
-low2high *send_ethernet_data() {
+low2high *send_udp_data() {
 	return &args_udp.msgs_data;
 }
 
@@ -87,6 +87,7 @@ void server_task(struct udp_args *args_u) {
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write(send_buffer);
     udp.endPacket();
+  }
 }
 
 // run UDP

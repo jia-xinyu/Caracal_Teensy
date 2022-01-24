@@ -7,9 +7,7 @@ joint_data _canData;
 
 static void runCANBUS(void* arg) {
   while (1) {
-    can1.events();
-    can2.events();
-    can3.events();
+    can_events();
 
     // get pointers from RMD_Motor.c
     joint_command *cmd = get_can_command();

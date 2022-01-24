@@ -10,6 +10,11 @@
 
 struct motor_args args_motor;
 
+// 3 CAN BUS
+FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> can1;
+FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can2;
+FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> can3;
+
 // arm or leg coordinate should match the motor rotation direction
 float side_a[3] = {1, 1, 1};
 float side_b[3] = {1, 1, 1};
@@ -43,6 +48,125 @@ joint_data *get_can_data() {
 }
 
 //------------------------------------------------------------------------
+
+void pack_torque_cmd(struct motor_args *args_m) {
+  // range: -2048~2048, corresponding to the actual torque current range -33A~33A
+  // pack ints into the can buffer
+  int16_t iqControl;
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 3; j++) {
+      switch (j) {
+        case 0:  // joint a
+          iqControl = (args_m->torq_input.tau_a[i]) * CURRENT_SCALING;
+          args_m->setpoint_msgs.setpoints_a[i].id = 0x141+ 0;
+          args_m->setpoint_msgs.setpoints_a[i].buf[4] = iqControl&0xff;
+          args_m->setpoint_msgs.setpoints_a[i].buf[5] = (iqControl>>8)&0xff;
+          args_m->setpoint_msgs.setpoints_a[i].len = 8;
+          args_m->setpoint_msgs.setpoints_a[i].buf[0] = 0xA1;
+          args_m->setpoint_msgs.setpoints_a[i].buf[1] = 0;
+          args_m->setpoint_msgs.setpoints_a[i].buf[2] = 0;
+          args_m->setpoint_msgs.setpoints_a[i].buf[3] = 0;
+          args_m->setpoint_msgs.setpoints_a[i].buf[6] = 0;
+          args_m->setpoint_msgs.setpoints_a[i].buf[7] = 0;
+          break;
+        case 1:	// joint b
+          iqControl = (args_m->torq_input.tau_b[i]) * CURRENT_SCALING;
+          args_m->setpoint_msgs.setpoints_b[i].id = 0x141+ 1;
+          args_m->setpoint_msgs.setpoints_b[i].buf[4] = iqControl&0xff;
+          args_m->setpoint_msgs.setpoints_b[i].buf[5] = (iqControl>>8)&0xff;
+          args_m->setpoint_msgs.setpoints_b[i].len = 8;
+          args_m->setpoint_msgs.setpoints_b[i].buf[0] = 0xA1;
+          args_m->setpoint_msgs.setpoints_b[i].buf[1] = 0;
+          args_m->setpoint_msgs.setpoints_b[i].buf[2] = 0;
+          args_m->setpoint_msgs.setpoints_b[i].buf[3] = 0;
+          args_m->setpoint_msgs.setpoints_b[i].buf[6] = 0;
+          args_m->setpoint_msgs.setpoints_b[i].buf[7] = 0;
+          break;
+        case 2:	// joint c
+          iqControl = (args_m->torq_input.tau_c[i]) * CURRENT_SCALING;
+          args_m->setpoint_msgs.setpoints_c[i].id = 0x141+ 2;
+          args_m->setpoint_msgs.setpoints_c[i].buf[4] = iqControl&0xff;
+          args_m->setpoint_msgs.setpoints_c[i].buf[5] = (iqControl>>8)&0xff;
+          args_m->setpoint_msgs.setpoints_c[i].len = 8;
+          args_m->setpoint_msgs.setpoints_c[i].buf[0] = 0xA1;
+          args_m->setpoint_msgs.setpoints_c[i].buf[1] = 0;
+          args_m->setpoint_msgs.setpoints_c[i].buf[2] = 0;
+          args_m->setpoint_msgs.setpoints_c[i].buf[3] = 0;
+          args_m->setpoint_msgs.setpoints_c[i].buf[6] = 0;
+          args_m->setpoint_msgs.setpoints_c[i].buf[7] = 0;
+          break;
+      }
+    }
+	}            
+}
+
+void unpack_reply(CAN_message_t rx_msgs, struct joint_data *data, struct torq_msgs *torq_out, int i) {
+  // 1. Motor temperature (int8_t, unit 1'C/LSB)
+  // 2. Motor torque current(Iq) (int16_t, Range:-2048~2048, real torque current range:-33A~33A)
+  // 3. Motor speed (int16_t, 1dps/LSB)
+  // 4. Encoder position value (int16_t, 14bit encoder value range 0~16383)
+  // 5. Encoder multiturn position value (int64_t, 0.01deg/LSB)
+  int64_t pposition;
+  int16_t pspeed;
+  int16_t ptorque;
+
+  if (rx_msgs.buf[0] == 0x9C)	{
+    // feedback speed, torque
+    pspeed = (rx_msgs.buf[5]<<8)|(rx_msgs.buf[4]);
+    ptorque = (rx_msgs.buf[3]<<8)|(rx_msgs.buf[2]);
+
+    switch (rx_msgs.id) {
+      case 0x141:  // joint a
+        data->qd_a[i] = (pspeed/ratio[0]) * DEG_TO_RADIAN * side_a[i];
+        torq_out->tau_a[i] = ptorque / CURRENT_SCALING;
+        break;
+      case 0x142:  // joint b
+        data->qd_b[i] = (pspeed/ratio[1]) * DEG_TO_RADIAN * side_b[i];
+        torq_out->tau_b[i] = ptorque / CURRENT_SCALING;
+        break;
+      case 0x143:  // joint c
+        data->qd_c[i] = (pspeed/ratio[2]) * DEG_TO_RADIAN * side_c[i];
+        torq_out->tau_c[i] = ptorque / CURRENT_SCALING;
+        break;
+    }
+
+  }	else if (rx_msgs.buf[0] == 0x92) {
+    // feedback position
+    pposition = ( rx_msgs.buf[1] | rx_msgs.buf[2] << 8| \
+    rx_msgs.buf[3] << 16 | rx_msgs.buf[4] << 24 | \
+    (uint64_t)rx_msgs.buf[5] << 32 |(uint64_t)rx_msgs.buf[6] << 40 | \
+    (uint64_t)rx_msgs.buf[7] << 48 );
+
+    switch (rx_msgs.id) {
+      case 0x141:  // joint a
+        data->q_a[i] = ((pposition*0.01/ratio[0]) * DEG_TO_RADIAN - offset_a[i]) * side_a[i];
+        break;
+      case 0x142:  // joint b
+        data->q_b[i] = ((pposition*0.01/ratio[1]) * DEG_TO_RADIAN - offset_b[i]) * side_b[i];
+        break;
+      case 0x143:  // joint c
+        data->q_c[i] = ((pposition*0.01/ratio[2]) * DEG_TO_RADIAN - offset_c[i]) * side_c[i];
+        break;
+    }
+  }
+}
+
+//------------------------------------------------------------------------
+
+// Callback CAN1
+void canSniff_1(const CAN_message_t &res_msgs_1) {  // 
+  unpack_reply(res_msgs_1, &args_motor.joint_DATA, &args_motor.torq_output, 1);				
+}
+
+// Callback CAN1
+void canSniff_2(const CAN_message_t &res_msgs_2) {  // 
+  unpack_reply(res_msgs_2, &args_motor.joint_DATA, &args_motor.torq_output, 2);				
+}
+
+// Callback CAN1
+void canSniff_3(const CAN_message_t &res_msgs_3) {  // 
+  unpack_reply(res_msgs_3, &args_motor.joint_DATA, &args_motor.torq_output, 3);				
+}
 
 // init CAN BUS
 void can_init() {
@@ -79,9 +203,9 @@ void can_init() {
     args_motor.req_msgs_pos[j].id = (0x141 + j);
     args_motor.req_msgs_pos[j].len = 8;
     for (int n = 1; n < 8; n++) {
-      args_motor.req_msgs_pos[j].buff[n] = 0;	
+      args_motor.req_msgs_pos[j].buf[n] = 0;	
     }
-    args_motor.req_msgs_pos[j].buff[0] = 0x92;	
+    args_motor.req_msgs_pos[j].buf[0] = 0x92;	
   }
   
   // 0x9C is the command for getting the velocity
@@ -89,11 +213,13 @@ void can_init() {
     args_motor.req_msgs_vel[j].id = (0x141 +j);
     args_motor.req_msgs_vel[j].len = 8;
     for (int n = 1; n < 8; n++) {
-      args_motor.req_msgs_vel[j].buff[n] = 0;	
+      args_motor.req_msgs_vel[j].buf[n] = 0;	
     }
-    args_motor.req_msgs_vel[j].buff[0] = 0x9C;		
+    args_motor.req_msgs_vel[j].buf[0] = 0x9C;		
   }
 }
+
+//------------------------------------------------------------------------
 
 void control_comp(struct motor_args *args_m) {
   // PD control law: tau = tau_ff + kp * (q_des-q_data) + kd * (qd_des-qd_data)
@@ -113,7 +239,7 @@ void control_comp(struct motor_args *args_m) {
     // Joint B
     args_m->torq_input.tau_b[i] = args_m->joint_CMD.tau_b_ff[i] + \
     (args_m->joint_CMD.kp_b[i]) * (args_m->joint_CMD.q_des_b[i] - args_m->joint_DATA.q_b[i]) + \
-    (args_m->joint_CMD.kd_b[i]) * (args_m->joint_CMD.qd_des_b[i] - args_m->joint_DATA.qd_bp[i]);
+    (args_m->joint_CMD.kd_b[i]) * (args_m->joint_CMD.qd_des_b[i] - args_m->joint_DATA.qd_b[i]);
 
     args_m->torq_input.tau_b[i] = args_m->torq_input.tau_b[i] * side_b[i];
 
@@ -123,108 +249,6 @@ void control_comp(struct motor_args *args_m) {
     (args_m->joint_CMD.kd_c[i]) * (args_m->joint_CMD.qd_des_c[i] - args_m->joint_DATA.qd_c[i]);
 
     args_m->torq_input.tau_c[i] = args_m->torq_input.tau_c[i] * side_c[i];	
-  }
-}
-
-void pack_torque_cmd(struct motor_args *args_m) {
-  // range: -2048~2048, corresponding to the actual torque current range -33A~33A
-  // pack ints into the can buffer
-  int16_t iqControl;
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 3; j++) {
-      switch (j) {
-        case 0:  // joint a
-          iqControl = (args_m->torq_input.tau_a[i]) * CURRENT_SCALING;
-          args_m->setpoint_msgs.setpoints_a[i].id = 0x141+ 0;
-          args_m->setpoint_msgs.setpoints_a[i].buff[4] = iqControl&0xff;
-          args_m->setpoint_msgs.setpoints_a[i].buff[5] = (iqControl>>8)&0xff;
-          args_m->setpoint_msgs.setpoints_a[i].len = 8;
-          args_m->setpoint_msgs.setpoints_a[i].buff[0] = 0xA1;
-          args_m->setpoint_msgs.setpoints_a[i].buff[1] = 0;
-          args_m->setpoint_msgs.setpoints_a[i].buff[2] = 0;
-          args_m->setpoint_msgs.setpoints_a[i].buff[3] = 0;
-          args_m->setpoint_msgs.setpoints_a[i].buff[6] = 0;
-          args_m->setpoint_msgs.setpoints_a[i].buff[7] = 0;
-          break;
-        case 1:	// joint b
-          iqControl = (args_m->torq_input.tau_b[i]) * CURRENT_SCALING;
-          args_m->setpoint_msgs.setpoints_b[i].id = 0x141+ 1;
-          args_m->setpoint_msgs.setpoints_b[i].buff[4] = iqControl&0xff;
-          args_m->setpoint_msgs.setpoints_b[i].buff[5] = (iqControl>>8)&0xff;
-          args_m->setpoint_msgs.setpoints_b[i].len = 8;
-          args_m->setpoint_msgs.setpoints_b[i].buff[0] = 0xA1;
-          args_m->setpoint_msgs.setpoints_b[i].buff[1] = 0;
-          args_m->setpoint_msgs.setpoints_b[i].buff[2] = 0;
-          args_m->setpoint_msgs.setpoints_b[i].buff[3] = 0;
-          args_m->setpoint_msgs.setpoints_b[i].buff[6] = 0;
-          args_m->setpoint_msgs.setpoints_b[i].buff[7] = 0;
-          break;
-        case 2:	// joint c
-          iqControl = (args_m->torq_input.tau_c[i]) * CURRENT_SCALING;
-          args_m->setpoint_msgs.setpoints_c[i].id = 0x141+ 2;
-          args_m->setpoint_msgs.setpoints_c[i].buff[4] = iqControl&0xff;
-          args_m->setpoint_msgs.setpoints_c[i].buff[5] = (iqControl>>8)&0xff;
-          args_m->setpoint_msgs.setpoints_c[i].len = 8;
-          args_m->setpoint_msgs.setpoints_c[i].buff[0] = 0xA1;
-          args_m->setpoint_msgs.setpoints_c[i].buff[1] = 0;
-          args_m->setpoint_msgs.setpoints_c[i].buff[2] = 0;
-          args_m->setpoint_msgs.setpoints_c[i].buff[3] = 0;
-          args_m->setpoint_msgs.setpoints_c[i].buff[6] = 0;
-          args_m->setpoint_msgs.setpoints_c[i].buff[7] = 0;
-          break;
-      }
-    }
-	}            
-}
-
-void unpack_reply(CAN_message_t *rx_msgs, struct joint_data *data, struct torq_msgs *torq_out, int i) {
-  // 1. Motor temperature (int8_t, unit 1'C/LSB)
-  // 2. Motor torque current(Iq) (int16_t, Range:-2048~2048, real torque current range:-33A~33A)
-  // 3. Motor speed (int16_t, 1dps/LSB)
-  // 4. Encoder position value (int16_t, 14bit encoder value range 0~16383)
-  // 5. Encoder multiturn position value (int64_t, 0.01deg/LSB)
-  int64_t pposition;
-  int16_t pspeed;
-  int16_t ptorque;
-
-  if (rx_msgs->buff[0] == 0x9C)	{
-    // feedback speed, torque
-    pspeed = (rx_msgs->buff[5]<<8)|(rx_msgs->buff[4]);
-    ptorque = (rx_msgs->buff[3]<<8)|(rx_msgs->buff[2]);
-
-    switch (rx_msgs->id) {
-      case 0x141:  // joint a
-        data->qd_a[i] = (pspeed/ratio[0]) * DEG_TO_RADIAN * side_a[i];
-        torq_out->tau_a[i] = ptorque / CURRENT_SCALING;
-        break;
-      case 0x142:  // joint b
-        data->qd_b[i] = (pspeed/ratio[1]) * DEG_TO_RADIAN * side_b[i];
-        torq_out->tau_b[i] = ptorque / CURRENT_SCALING;
-        break;
-      case 0x143:  // joint c
-        data->qd_c[i] = (pspeed/ratio[2]) * DEG_TO_RADIAN * side_c[i];
-        torq_out->tau_c[i] = ptorque / CURRENT_SCALING;
-        break;
-    }
-
-  }	else if (rx_msgs->buff[0] == 0x92) {
-    // feedback position
-    pposition = ( rx_msgs->buff[1] | rx_msgs->buff[2] << 8| \
-    rx_msgs->buff[3] << 16 | rx_msgs->buff[4] << 24 | \
-    (uint64_t)rx_msgs->buff[5] << 32 |(uint64_t)rx_msgs->buff[6] << 40 | \
-    (uint64_t)rx_msgs->buff[7] << 48 );
-
-    switch (rx_msgs->id) {
-      case 0x141:  // joint a
-        data->q_a[i] = ((pposition*0.01/ratio[0]) * DEG_TO_RADIAN - offset_a[i]) * side_a[i];
-        break;
-      case 0x142:  // joint b
-        data->q_b[i] = ((pposition*0.01/ratio[1]) * DEG_TO_RADIAN - offset_b[i]) * side_b[i];
-        break;
-      case 0x143:  // joint c
-        data->q_c[i] = ((pposition*0.01/ratio[2]) * DEG_TO_RADIAN - offset_c[i]) * side_c[i];
-        break;
-    }
   }
 }
 
@@ -241,6 +265,7 @@ int request_all(CAN_message_t tx_msgs[3]) {
       return 0;
     }
   }
+  return 1;
 }
 
 // print error messages
@@ -254,16 +279,17 @@ void print_err(char action[], char info[]) {
 
 // main function
 void task_fun(struct motor_args *args_m) {
-  int err;
-  int err1, err2, err3;
+  int err; 
 
   // send 0x92 requests on CANBUS
   err = request_all(args_m->req_msgs_pos);
-  if (!err) print_err("send", "position");
+  char a[5] = "send"; char b[9] = "position";
+  if (!err) print_err(a, b);
 
   // send 0x9C requests on CANBUS
   err = request_all(args_m->req_msgs_vel);
-  if (!err) print_err("send", "velocity");
+  char c[5] = "send"; char d[9] = "velocity";
+  if (!err) print_err(c, d);
 
   // read responses from canSniff functions
   
@@ -286,17 +312,17 @@ void task_fun(struct motor_args *args_m) {
 
   //------------------------------------------------------------------------
   // send msgs
-  err1 = can1.write(args_m->setpoint_msgs.setpoints_a[0]);
-  err2 = can2.write(args_m->setpoint_msgs.setpoints_a[1]);
-  err3 = can3.write(args_m->setpoint_msgs.setpoints_a[2]);
+  can1.write(args_m->setpoint_msgs.setpoints_a[0]);
+  can2.write(args_m->setpoint_msgs.setpoints_a[1]);
+  can3.write(args_m->setpoint_msgs.setpoints_a[2]);
 
-  err1 = can1.write(args_m->setpoint_msgs.setpoints_b[0]);
-  err2 = can2.write(args_m->setpoint_msgs.setpoints_b[1]);
-  err3 = can3.write(args_m->setpoint_msgs.setpoints_b[2]);
+  can1.write(args_m->setpoint_msgs.setpoints_b[0]);
+  can2.write(args_m->setpoint_msgs.setpoints_b[1]);
+  can3.write(args_m->setpoint_msgs.setpoints_b[2]);
 
-  err1 = can1.write(args_m->setpoint_msgs.setpoints_c[0]);
-  err2 = can2.write(args_m->setpoint_msgs.setpoints_c[1]);
-  err3 = can3.write(args_m->setpoint_msgs.setpoints_c[2]);
+  can1.write(args_m->setpoint_msgs.setpoints_c[0]);
+  can2.write(args_m->setpoint_msgs.setpoints_c[1]);
+  can3.write(args_m->setpoint_msgs.setpoints_c[2]);
 }
 
 // run CAN BUS in main.cpp
@@ -304,17 +330,8 @@ void can_task() {
   task_fun(&args_motor);
 }
 
-// Callback CAN1
-void canSniff_1(const CAN_message_t res_msgs_1) {  // 
-  unpack_reply(&res_msgs_1, &args_motor.joint_DATA, &args_motor.torq_output, 1);				
-}
-
-// Callback CAN1
-void canSniff_2(const CAN_message_t res_msgs_2) {  // 
-  unpack_reply(&res_msgs_2, &args_motor.joint_DATA, &args_motor.torq_output, 2);				
-}
-
-// Callback CAN1
-void canSniff_3(const CAN_message_t res_msgs_3) {  // 
-  unpack_reply(&res_msgs_3, &args_motor.joint_DATA, &args_motor.torq_output, 3);				
+void can_events() {
+  can1.events();
+  can2.events();
+  can3.events();
 }

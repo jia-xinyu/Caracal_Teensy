@@ -12,13 +12,6 @@
 // #define PRINT_DATA  // turn print on or off
 #define PRINT_ERROR
 
-// Joint Safety Limits
-//[TO DO]
-
-FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_16> can1;
-FlexCAN_T4<CAN2, RX_SIZE_256, TX_SIZE_16> can2;
-FlexCAN_T4<CAN3, RX_SIZE_256, TX_SIZE_16> can3;
-
 // final joint torque, joint feedback torque
 struct torq_msgs {
   float tau_a[3];
@@ -55,6 +48,7 @@ struct motor_args {
 
 void can_init();
 void can_task();
+void can_events();
 joint_command *get_can_command();
 joint_data *get_can_data();
 
