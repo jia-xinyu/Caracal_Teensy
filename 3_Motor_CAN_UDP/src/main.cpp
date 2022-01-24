@@ -60,13 +60,12 @@ void setup() {
   // create 2 threads
   portBASE_TYPE s1, s2;
 
-  // create task at priority 1
-  // s1 = xTaskCreate(runUDP, NULL, configMINIMAL_STACK_SIZE, NULL, 1, NULL);
-  s1 = xTaskCreate(runUDP, NULL, 200, NULL, 1, NULL);
+  // create task at priority 9, 0~9, high numbers denote high priority
+  // configMINIMAL_STACK_SIZE = 90 uin16_t, 180bytes, used by idle task
+  s1 = xTaskCreate(runUDP, NULL, configMINIMAL_STACK_SIZE, NULL, 9, NULL);
 
-  // create task at priority 1
-  // s2 = xTaskCreate(runCANBUS, NULL, configMINIMAL_STACK_SIZE, NULL, 1, NULL);
-  s2 = xTaskCreate(runCANBUS, NULL, 200, NULL, 1, NULL);
+  // create task at priority 9
+  s2 = xTaskCreate(runCANBUS, NULL, configMINIMAL_STACK_SIZE, NULL, 9, NULL);
 
   // check for creation errors
   if (s1 != pdPASS || s2 != pdPASS ) {
