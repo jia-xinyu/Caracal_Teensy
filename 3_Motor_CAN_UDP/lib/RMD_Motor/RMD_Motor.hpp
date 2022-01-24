@@ -12,13 +12,6 @@
 // #define PRINT_DATA  // turn print on or off
 #define PRINT_ERROR
 
-// final joint torque, joint feedback torque
-struct torq_msgs {
-  float tau_a[3];
-  float tau_b[3];
-  float tau_c[3];
-};
-
 // CAN msgs for sending setpoints
 struct setpoint_msgs {
   CAN_message_t setpoints_a[3];
@@ -39,11 +32,6 @@ struct motor_args {
   // join command and joint data
   joint_command joint_CMD;
   joint_data joint_DATA;
-
-  // final joint torque to motor
-  struct torq_msgs torq_input;
-  // feedback torque from motor
-  struct torq_msgs torq_output;
 };
 
 void can_init();
