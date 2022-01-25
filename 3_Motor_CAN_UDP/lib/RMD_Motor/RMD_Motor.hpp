@@ -9,8 +9,8 @@
 #define CURRENT_SCALING 43  // 62.06 /* 2048 / 33A */
 
 // #define ESTOP  // turn ESTOP on or off
-#define PRINT_DATA  // turn print on or off
-#define PRINT_ERROR
+// #define PRINT_DATA  // turn print on or off
+// #define PRINT_ERROR
 
 // data struct for passing data
 struct motor_args {

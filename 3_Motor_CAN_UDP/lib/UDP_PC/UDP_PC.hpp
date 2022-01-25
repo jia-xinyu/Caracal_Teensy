@@ -6,23 +6,22 @@
 #include "joint_message.hpp"
 
 #define RX_MAX_SIZE 48  // 24
-#define TX_MAX_SIZE 150  // 24
+#define TX_MAX_SIZE 108  // 24
 #define PRINT_SIZE
 
-struct imu_data {
-  float accel[3];
-  float gyro[3];  // x y z
-  float quat[4];  // i,j,k,real
+// 16 bytes
+struct force_data {
+  float f_r[4];
 };
 
+// 108 bytes
 struct low2high {
   joint_data _joint_data;
-  // imu_data imu_data;
   // force_data _force_data;
 };
 
+// 48 bytes
 struct high2low {
-  int32_t status; //check ethernet connection
   joint_command _joint_cmd;
 };
 

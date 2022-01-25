@@ -157,7 +157,7 @@ void unpack_reply(CAN_message_t rx_msgs, struct joint_data *data, int i) {
 
 // Callback CAN1
 void canSniff_1(const CAN_message_t &res_msgs_1) {  // 
-  unpack_reply(res_msgs_1, &args_motor.joint_DATA, 1);	
+  unpack_reply(res_msgs_1, &args_motor.joint_DATA, 1);
 }
 
 // Callback CAN1
@@ -223,22 +223,6 @@ void can_init() {
 
 //------------------------------------------------------------------------
 
-// write 3 limbs simultaneously
-int request_all(CAN_message_t tx_msgs[]) {
-  int err1, err2, err3;
-  for (int j = 0; j < 3; j++) { // joint a, b, c
-    err1 = can1.write(tx_msgs[j]);
-    err2 = can2.write(tx_msgs[j]);
-    err3 = can3.write(tx_msgs[j]);
-    // if failed to send req
-    if (err1!=1 && err2!=1 && err3!=1) {
-      estop();
-      return 0;
-    }
-  }
-  return 1;
-}
-
 // print error messages
 void print_err(char action[], char info[]) {
   #ifdef PRINT_ERROR
@@ -261,7 +245,7 @@ void angle_limit(struct motor_args *args_m) {
 
 void print_data(struct motor_args *args_m) {
   #ifdef PRINT_DATA
-  Serial.println("position, velocity, torque of first joint on 3 CAN BUS");
+  Serial.println("position, velocity, torque of first joint on each 3 CAN BUS");
   Serial.print(args_m->joint_DATA.q_a[0]); Serial.print(" / ");
   Serial.print(args_m->joint_DATA.q_a[1]); Serial.print(" / "); Serial.println(args_m->joint_DATA.q_a[2]);
 
@@ -275,17 +259,31 @@ void print_data(struct motor_args *args_m) {
 
 // main function
 void task_fun(struct motor_args *args_m) {
-  int err; 
+  int err1, err2, err3;
 
   // send 0x92 requests on CANBUS
-  err = request_all(args_m->req_msgs_pos);
-  char a[5] = "send"; char b[9] = "position";
-  if (!err) print_err(a, b);
+  for (int j = 0; j < 3; j++) { // joint a, b, c
+    err1 = can1.write(args_m->req_msgs_pos[j]);
+    err2 = can2.write(args_m->req_msgs_pos[j]);
+    err3 = can3.write(args_m->req_msgs_pos[j]);
+    // if failed to send req
+    if (err1!=1 && err2!=1 && err3!=1) {
+      char a[5] = "send"; char b[9] = "position";
+      print_err(a, b);
+    }
+  }
 
   // send 0x9C requests on CANBUS
-  err = request_all(args_m->req_msgs_vel);
-  char c[5] = "send"; char d[9] = "velocity";
-  if (!err) print_err(c, d);
+  for (int j = 0; j < 3; j++) { // joint a, b, c
+    err1 = can1.write(args_m->req_msgs_vel[j]);
+    err2 = can2.write(args_m->req_msgs_vel[j]);
+    err3 = can3.write(args_m->req_msgs_vel[j]);
+    // if failed to send req
+    if (err1!=1 && err2!=1 && err3!=1) {
+      char c[5] = "send"; char d[9] = "velocity";
+      print_err(c, d);
+    }
+  }
 
   // read responses from canSniff functions
 

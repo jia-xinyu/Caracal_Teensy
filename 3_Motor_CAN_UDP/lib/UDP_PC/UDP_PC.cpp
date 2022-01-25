@@ -77,7 +77,7 @@ void server_task(struct udp_args *args_u) {
     #endif
 
     // read the packet into packetBufffer
-    udp.read(recv_buffer, RX_MAX_SIZE);
+    // udp.read(recv_buffer, RX_MAX_SIZE);
 
     // copy received command from UDP rx and copy all data to UDP tx
     memcpy(&args_u->msgs_cmd, &recv_buffer, sizeof(high2low));
