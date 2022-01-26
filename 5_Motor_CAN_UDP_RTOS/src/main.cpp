@@ -32,8 +32,6 @@ static void runUDP(void* arg) {
 
 static void runCANBUS(void* arg) {
   while (1) {
-    can_events();
-
     // get pointers from RMD_Motor.c
     joint_command *cmd = get_can_command();
     joint_data *data = get_can_data();
@@ -103,5 +101,6 @@ void setup() {
 
 
 void loop() {
+  can_events();
   // Not used
 }
