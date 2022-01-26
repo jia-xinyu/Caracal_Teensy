@@ -59,7 +59,7 @@ void udp_init() {
   Serial.println("Ethernet cable is connected.");
 }
 
-// main function
+// receive command
 void udp_recv() {
   int packetSize = udp.parsePacket();
   if (packetSize) {
@@ -84,10 +84,10 @@ void udp_recv() {
   }
 }
 
+// send back the reply to the IP address and port
 void udp_send() {
   memcpy(&send_buffer, &args_udp.msgs_data, sizeof(low2high));
 
-  // send back the reply to the IP address and port
   udp.beginPacket(udp.remoteIP(), udp.remotePort());
   udp.write(send_buffer);
   udp.endPacket();

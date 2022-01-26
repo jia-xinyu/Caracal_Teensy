@@ -23,31 +23,27 @@ void setup() {
 
 
 void loop() {
-    can_events();
+  can_events();
 
-    // get pointers from UDP_PC.c
-    low2high *udp_tx = send_udp_data();
-    high2low *udp_rx = recv_udp_command();
+  // get pointers from UDP_PC.c
+  low2high *udp_tx = send_udp_data();
+  high2low *udp_rx = recv_udp_command();
 
-    // get pointers from RMD_Motor.c
-    joint_command *cmd = get_can_command();
-    joint_data *data = get_can_data();
+  // get pointers from RMD_Motor.c
+  joint_command *cmd = get_can_command();
+  joint_data *data = get_can_data();
 
-    // copy all sensor data to UDP tx
-    // memcpy(&udp_tx->_force_data, &_forceData, sizeof(force_data));
+  // udp_recv();
 
-    // udp_recv();
+  // copy command from UDP rx to CAN BUS
+  memcpy(cmd, &udp_rx->_joint_cmd, sizeof(joint_command));
+  
+  // compute
+  can_task();
 
-    // udp_rx->_joint_cmd.tau_a_des[0] = 50;
+  // copy all sensor data to UDP tx
+  memcpy(&udp_tx->_joint_data, data, sizeof(joint_data));
+  // memcpy(&udp_tx->_force_data, &_forceData, sizeof(force_data));
 
-    // copy command from UDP rx to CAN BUS
-    memcpy(cmd, &udp_rx->_joint_cmd, sizeof(joint_command));
-    // compute
-    can_task();
-    // copy data from CAN BUS to UDP tx
-    memcpy(&udp_tx->_joint_data, data, sizeof(joint_data));
-
-    Serial.println(data->q_a[0]);
-
-    udp_send();
+  udp_send();
 }

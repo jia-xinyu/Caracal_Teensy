@@ -10,6 +10,9 @@
 
 struct motor_args args_motor;
 
+// callback functions cannot get access to same address simultaneously
+joint_data can_rx[3];
+
 // 3 CAN BUS, define buffer size
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_32> can1;
 FlexCAN_T4<CAN2, RX_SIZE_64, TX_SIZE_32> can2;
@@ -28,7 +31,7 @@ float min_a[3] = {0, 0, 0}; float max_a[3] = {0, 0, 0};
 float min_b[3] = {0, 0, 0}; float max_b[3] = {0, 0, 0};
 float min_c[3] = {0, 0, 0}; float max_c[3] = {0, 0, 0};
 // tranmission ratio
-float ratio[3] = {50, 50, 50};
+float ratio[3] = {1, 1, 1};
 
 // [TO DO] EStop
 void estop() {
@@ -155,19 +158,25 @@ void unpack_reply(CAN_message_t rx_msgs, struct joint_data *data, int i) {
 
 //------------------------------------------------------------------------
 
-// Callback CAN1
-void canSniff_1(const CAN_message_t &res_msgs_1) {  // 
-  unpack_reply(res_msgs_1, &args_motor.joint_DATA, 1);	
+// callback CAN 1
+void canSniff_1(const CAN_message_t &res_msgs_1) {
+  for (int i = 0; i < res_msgs_1.len; i++) {
+    unpack_reply(res_msgs_1, &can_rx[0], 0);
+  }
 }
 
-// Callback CAN1
-void canSniff_2(const CAN_message_t &res_msgs_2) {  // 
-  unpack_reply(res_msgs_2, &args_motor.joint_DATA, 2);
+// callback CAN 2
+void canSniff_2(const CAN_message_t &res_msgs_2) {
+  for (int i = 0; i < res_msgs_2.len; i++) {
+    unpack_reply(res_msgs_2, &can_rx[1], 1);
+  }
 }
 
-// Callback CAN1
-void canSniff_3(const CAN_message_t &res_msgs_3) {  // 
-  unpack_reply(res_msgs_3, &args_motor.joint_DATA, 3);
+// callback CAN 3
+void canSniff_3(const CAN_message_t &res_msgs_3) {
+  for (int i = 0; i < res_msgs_3.len; i++) {
+    unpack_reply(res_msgs_3, &can_rx[2], 2);
+  }
 }
 
 // init CAN BUS
@@ -257,15 +266,32 @@ void print_data(struct motor_args *args_m) {
   #endif
 }
 
+void copy_data(struct motor_args *args_m) {
+  // can 1, can 2, can 3
+  for (int i = 0; i < 3; i++) {
+    args_m->joint_DATA.q_a[i] = can_rx[i].q_a[i];
+    args_m->joint_DATA.q_b[i] = can_rx[i].q_b[i];
+    args_m->joint_DATA.q_c[i] = can_rx[i].q_c[i];
+
+    args_m->joint_DATA.qd_a[i] = can_rx[i].qd_a[i];
+    args_m->joint_DATA.qd_b[i] = can_rx[i].qd_b[i];
+    args_m->joint_DATA.qd_c[i] = can_rx[i].qd_c[i];
+
+    args_m->joint_DATA.tau_a[i] = can_rx[i].tau_a[i];
+    args_m->joint_DATA.tau_b[i] = can_rx[i].tau_b[i];
+    args_m->joint_DATA.tau_c[i] = can_rx[i].tau_c[i];    
+  }
+}
+
 // main function
 void task_fun(struct motor_args *args_m) {
   int err1, err2, err3;
 
   // send 0x92 requests on CANBUS
-  for (int j = 0; j < 3; j++) { // joint a, b, c
-    err1 = can1.write(args_m->req_msgs_pos[j]); delay(0.002); 
-    err2 = can2.write(args_m->req_msgs_pos[j]); delay(0.002); 
-    err3 = can3.write(args_m->req_msgs_pos[j]); delay(0.002); 
+  for (int j = 0; j < 3; j++) {  // joint a, b, c
+    err1 = can1.write(args_m->req_msgs_pos[j]);
+    err2 = can2.write(args_m->req_msgs_pos[j]);
+    err3 = can3.write(args_m->req_msgs_pos[j]);
     // if failed to send req
     if (err1!=1 && err2!=1 && err3!=1) {
       char a[5] = "send"; char b[9] = "position";
@@ -274,10 +300,10 @@ void task_fun(struct motor_args *args_m) {
   }
 
   // send 0x9C requests on CANBUS
-  for (int j = 0; j < 3; j++) { // joint a, b, c
-    err1 = can1.write(args_m->req_msgs_vel[j]); delay(0.002); 
-    err2 = can2.write(args_m->req_msgs_vel[j]); delay(0.002); 
-    err3 = can3.write(args_m->req_msgs_vel[j]); delay(0.002);
+  for (int j = 0; j < 3; j++) {  // joint a, b, c
+    err1 = can1.write(args_m->req_msgs_vel[j]);
+    err2 = can2.write(args_m->req_msgs_vel[j]);
+    err3 = can3.write(args_m->req_msgs_vel[j]);
     // if failed to send req
     if (err1!=1 && err2!=1 && err3!=1) {
       char c[5] = "send"; char d[9] = "velocity";
@@ -285,7 +311,8 @@ void task_fun(struct motor_args *args_m) {
     }
   }
 
-  // read responses from canSniff functions
+  // read responses from callback functions
+  copy_data(args_m);
 
   //------------------------------------------------------------------------
   // ESTOP if over angle limit
@@ -299,17 +326,17 @@ void task_fun(struct motor_args *args_m) {
 
   //------------------------------------------------------------------------
   // send msgs
-  can1.write(args_m->setpoints_a[0]); delay(0.002); 
-  can2.write(args_m->setpoints_a[1]); delay(0.002); 
-  can3.write(args_m->setpoints_a[2]); delay(0.002); 
+  can1.write(args_m->setpoints_a[0]);
+  can2.write(args_m->setpoints_a[1]);
+  can3.write(args_m->setpoints_a[2]);
 
-  can1.write(args_m->setpoints_b[0]); delay(0.002); 
-  can2.write(args_m->setpoints_b[1]); delay(0.002); 
-  can3.write(args_m->setpoints_b[2]); delay(0.002); 
+  can1.write(args_m->setpoints_b[0]);
+  can2.write(args_m->setpoints_b[1]);
+  can3.write(args_m->setpoints_b[2]);
 
-  can1.write(args_m->setpoints_c[0]); delay(0.002); 
-  can2.write(args_m->setpoints_c[1]); delay(0.002); 
-  can3.write(args_m->setpoints_c[2]); delay(0.002); 
+  can1.write(args_m->setpoints_c[0]);
+  can2.write(args_m->setpoints_c[1]);
+  can3.write(args_m->setpoints_c[2]);
 }
 
 // run CAN BUS in main.cpp
@@ -317,6 +344,7 @@ void can_task() {
   task_fun(&args_motor);
 }
 
+// push received interrupt frames to the callbacks
 void can_events() {
   can1.events();
   can2.events();
