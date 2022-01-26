@@ -102,5 +102,4 @@ void setup() {
 
 void loop() {
   can_events();
-  // Not used
 }

@@ -33,7 +33,7 @@ void loop() {
   joint_command *cmd = get_can_command();
   joint_data *data = get_can_data();
 
-  // udp_recv();
+  udp_recv();
 
   // copy command from UDP rx to CAN BUS
   memcpy(cmd, &udp_rx->_joint_cmd, sizeof(joint_command));
