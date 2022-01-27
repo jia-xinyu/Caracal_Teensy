@@ -48,7 +48,6 @@ static void runCANBUS(void* arg) {
 
 // static void runForce(void* arg) {
 //   while (1) {
-
 //     // memcpy(&_forceData, &data, sizeof(force_data));
 //   }
 // }
@@ -94,7 +93,7 @@ void setup() {
   Serial.println("Starting the scheduler !");
   vTaskStartScheduler();
 
-  // pause before here
+  // will not get here unless there is insufficient RAM
   Serial.println("Insufficient RAM");
   while(1);
 }
