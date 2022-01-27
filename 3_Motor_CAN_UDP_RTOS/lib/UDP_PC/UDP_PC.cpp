@@ -22,6 +22,8 @@ char send_buffer[TX_MAX_SIZE];
 
 struct udp_args args_udp;
 
+int count = 0;
+
 // Get UDP rx pointer
 high2low *recv_udp_command() {
  	return &args_udp.msgs_cmd;
@@ -45,35 +47,38 @@ void udp_init() {
 
   // check for Ethernet hardware present
   if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-    Serial.println("Ethernet shield was not found. Sorry, can't run without hardware. :(");
+    Serial.println("[UDP-RT-TASK]: Ethernet shield was not found. Sorry, can't run without hardware. :(");
     while (true) {
       delay(1); // do nothing, no point running without Ethernet hardware
     }
   }
   if (Ethernet.linkStatus() == LinkOFF) {
-    Serial.println("Ethernet cable is not connected.");
+    Serial.println("[UDP-RT-TASK]: Ethernet cable is not connected.");
   }
 
   // start UDP
   udp.begin(localPort);
-  Serial.println("Ethernet cable is connected.");
+  Serial.println("[UDP-RT-TASK]: Ethernet cable is connected.");
 }
 
 // main function
 void server_task(struct udp_args *args_u) {
   int packetSize = udp.parsePacket();
   if (packetSize) {
+
+    // print info 5 times
     #ifdef PRINT_SIZE
-    Serial.print("Received packet of size "); Serial.println(packetSize);
-    Serial.print("From ");
-    IPAddress remote = udp.remoteIP();
-    for (int i = 0; i < 4; i++) {
-      Serial.print(remote[i], DEC);
-      if (i < 3) {
-        Serial.print(".");
+    if (count < 5) {
+      Serial.print("[UDP-RT-TASK]: Received packet of size "); Serial.println(packetSize);
+      Serial.print("From ");
+      IPAddress remote = udp.remoteIP();
+      for (int i = 0; i < 4; i++) {
+        Serial.print(remote[i], DEC);
+        if (i < 3)  Serial.print(".");
       }
+      Serial.print(", port "); Serial.println(udp.remotePort());
+      count++;
     }
-    Serial.print(", port "); Serial.println(udp.remotePort());
     #endif
 
     // read the packet into packetBufffer
@@ -87,10 +92,19 @@ void server_task(struct udp_args *args_u) {
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
     udp.write(send_buffer);
     udp.endPacket();
+  } else {
+    // zero cmd if udp is not connected  [TO DO] use soft stop
+    for (int i = 0; i < 3; i++) {
+      args_u->msgs_cmd._joint_cmd.tau_a_des[i] = 0.0;
+      args_u->msgs_cmd._joint_cmd.tau_b_des[i] = 0.0;
+      args_u->msgs_cmd._joint_cmd.tau_c_des[i] = 0.0;
+    }
+    // print warnings as few as possible since they affect threads
+    // Serial.println("[UDP-RT-TASK]: waiting for command ...");
   }
 }
 
-// run UDP
+// run UDP in main.cpp
 void udp_task() {
   server_task(&args_udp);
 }

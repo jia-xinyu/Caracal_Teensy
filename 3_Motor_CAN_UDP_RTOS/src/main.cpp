@@ -27,6 +27,8 @@ static void runUDP(void* arg) {
     // recevive command from UDP rx
     memcpy(&_canCommand, &udp_rx->_joint_cmd, sizeof(joint_command));
 
+    // 1 kHz
+    vTaskDelay((1L * configTICK_RATE_HZ) / 1000L);
   }
 }
 
@@ -43,6 +45,9 @@ static void runCANBUS(void* arg) {
 
     // give signal to thread UDP
     xSemaphoreGive(sem);
+
+    // 2 kHz
+    vTaskDelay((1L * configTICK_RATE_HZ) / 2000L);
   }
 }
 

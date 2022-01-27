@@ -7,7 +7,7 @@
 
 #define RX_MAX_SIZE 48  // 24
 #define TX_MAX_SIZE 108  // 24
-#define PRINT_SIZE
+// #define PRINT_SIZE
 
 // 16 bytes
 struct force_data {
