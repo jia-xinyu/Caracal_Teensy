@@ -47,7 +47,7 @@ Address: 192.168.137.178
 Netmask: 255.0.0.0
 ```
 
-**4)** Compile and run the high-level example code in `demo/udp_c` folder. 
+**4)** Compile and run the high-level example in `demo/udp_c` folder. 
 ```
 sudo gcc client.c -o client
 ./client
@@ -118,6 +118,6 @@ Currently only 2 threads are scheduled.
 
 * Intergrating other sensors - IMU, force sensor
 
-* Remove or uncomment all `Serial.print` or `Serial.println` funtions since they affect threads running
+* Remove or uncomment all `Serial.print` or `Serial.println` functions since they affect threads running
 
 * Debug MATLAB and Python version of high-level examples
