@@ -4,7 +4,6 @@
 </div>
 
 <div align="center">
-<img width="400" src="doc/Teens4_1.jpg">
 <img width="400" src="doc/can_bus.jpg">
 </div>
 
@@ -21,7 +20,11 @@ This repository for Teensy 4.1 functions as a hardware bridge between high-level
 ## Hardware #
 * [Teensy 4.1](https://www.pjrc.com/store/teensy41.html) - 600MHz, 8 serial, 3 SPI, 3 I2C, 3 CAN BUS, an Ethernet 10/100 Mbit
 
-* Carrier Board - [Offical](https://copperhilltech.com/teensy-4-1-triple-can-bus-board-with-240x240-lcd-and-ethernet/) or Self-customized
+* Carrier Board - [Official](https://copperhilltech.com/teensy-4-1-triple-can-bus-board-with-240x240-lcd-and-ethernet/) or Self-customized
+
+<div align="center">
+<img width="400" src="doc/Teens4_1.jpg">
+</div>
 
 ## Dependencies #
 * IDE - [PlatformIO](https://www.youtube.com/watch?v=JmvMvIphMnY)
