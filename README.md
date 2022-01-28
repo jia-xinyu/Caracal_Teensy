@@ -4,8 +4,8 @@
 </div>
 
 <div align="center">
-<img width="100" src="doc/Teens4_1.jpg">
-<img width="300" src="doc/can_bus.jpg">
+<img width="400" src="doc/Teens4_1.jpg">
+<img width="400" src="doc/can_bus.jpg">
 </div>
 
 ## Introduction #
