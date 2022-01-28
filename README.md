@@ -8,7 +8,7 @@
 </div>
 
 ## Introduction #
-This repository for Teensy 4.1 functions as a hardware bridge between high-level controllers with Ethernet Ports and [GYEMS-RMD](http://www.gyems.cn/product.html) motors with CAN BUS Protocol. You can directly send torque commands to up to 9 motors and receive feedback data, such as position, velocity and actual torque. In the future, other sensor data will be also intergrated here in the same way.
+This repository functions as a hardware bridge between high-level controllers with Ethernet Ports and [GYEMS-RMD](http://www.gyems.cn/product.html) motors with CAN BUS Protocol. You can directly send torque commands to up to 9 motors and receive feedback data, such as position, velocity and actual torque. In the future, other sensor data will be also intergrated here in the same way.
 
 * `1_Motor_CAN` : CAN BUS protocol of motors to write command and read data
 * `2_Motor_CAN_UDP` : ~, UDP protocol to communicate with high-level controllers
@@ -29,6 +29,8 @@ This repository for Teensy 4.1 functions as a hardware bridge between high-level
 ## Dependencies #
 * IDE - [PlatformIO](https://www.youtube.com/watch?v=JmvMvIphMnY)
 
+* IDE Setup - [Teensy Loader](https://www.pjrc.com/teensy/tutorial.html)
+
 * CAN BUS - [FlexCAN_T4](https://github.com/tonton81/FlexCAN_T4)
 
 * UDP - [NativeEthernet](https://github.com/vjmuzik/NativeEthernet), [FNET](https://github.com/vjmuzik/FNET)
@@ -36,7 +38,7 @@ This repository for Teensy 4.1 functions as a hardware bridge between high-level
 * RTOS - [FreeRTOS-Teensy4](https://github.com/juliandesvignes/FreeRTOS-Teensy4)
 
 ## How to run #
-**1)** Clone this repository on your controller. Here we take a laptop with Ubuntu 18.04 as an example. In principle the code is independend of the environment, so both Windows and Linux should be OK (not yet been tested).
+**1)** Clone this repository on your PC or controller, build the Arduino project in `3_Motor_CAN_UDP_RTOS` folder and then upload to Teensy. Here we take a laptop with Ubuntu 18.04 as a high-level controller. In principle the code is independend of the environment, so both Windows and Linux should be OK (not yet been tested).
 
 **2)** Connect all devices together.
 
