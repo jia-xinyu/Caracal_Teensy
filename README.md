@@ -116,4 +116,6 @@ Currently only 2 threads are scheduled.
 
 * Intergrating other sensors - IMU, force sensor
 
-* Remove or uncomment all `Serial.print` or `Serial.println` funtions since they affect threads running.
+* Remove or uncomment all `Serial.print` or `Serial.println` funtions since they affect threads running
+
+* Debug MATLAB and Python version of high-level examples
