@@ -29,7 +29,7 @@ This repository functions as a hardware bridge between high-level controllers wi
 ## Dependencies #
 * IDE - [PlatformIO](https://www.youtube.com/watch?v=JmvMvIphMnY)
 
-* IDE Setup - [Teensy Loader](https://www.pjrc.com/teensy/tutorial.html)
+* IDE Setup - [Teensyduino](https://www.pjrc.com/teensy/tutorial.html)
 
 * CAN BUS - [FlexCAN_T4](https://github.com/tonton81/FlexCAN_T4)
 
