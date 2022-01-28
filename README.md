@@ -4,7 +4,7 @@
 </div>
 
 <div align="center">
-<img width="400" src="doc/can_bus.jpg">
+<img width="800" src="doc/can_bus.jpg">
 </div>
 
 ## Introduction #
@@ -23,7 +23,7 @@ This repository for Teensy 4.1 functions as a hardware bridge between high-level
 * Carrier Board - [Official](https://copperhilltech.com/teensy-4-1-triple-can-bus-board-with-240x240-lcd-and-ethernet/) or Self-customized
 
 <div align="center">
-<img width="400" src="doc/Teens4_1.jpg">
+<img width="300" src="doc/Teens4_1.jpg">
 </div>
 
 ## Dependencies #
