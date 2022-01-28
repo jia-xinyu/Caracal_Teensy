@@ -1,4 +1,5 @@
 <div align="center">
+
 # Caracal_Teensy
 </div>
 
@@ -12,37 +13,43 @@ In the future, other sensor data will be also intergrated here in the same way.
 </div>
 
 ## Hardware #
-* [Teensy 4.1](https://www.pjrc.com/store/teensy41.html): 600MHz, 8 serial, 3 SPI, 3 I2C, 3 CAN Bus, an Ethernet 10/100 Mbit
+* [Teensy 4.1](https://www.pjrc.com/store/teensy41.html) - 600MHz, 8 serial, 3 SPI, 3 I2C, 3 CAN BUS, an Ethernet 10/100 Mbit
 
-* Carrier Board: [Offical](https://copperhilltech.com/teensy-4-1-triple-can-bus-board-with-240x240-lcd-and-ethernet/) or Self-customized
+* Carrier Board - [Offical](https://copperhilltech.com/teensy-4-1-triple-can-bus-board-with-240x240-lcd-and-ethernet/) or Self-customized
 
 ## Dependencies #
-* IDE: [PlatformIO](https://www.youtube.com/watch?v=JmvMvIphMnY)
+* IDE - [PlatformIO](https://www.youtube.com/watch?v=JmvMvIphMnY)
 
-* CAN BUS: [FlexCAN_T4](https://github.com/tonton81/FlexCAN_T4)
+* CAN BUS - [FlexCAN_T4](https://github.com/tonton81/FlexCAN_T4)
 
-* UDP: [NativeEthernet](https://github.com/vjmuzik/NativeEthernet), [FNET](https://github.com/vjmuzik/FNET)
+* UDP - [NativeEthernet](https://github.com/vjmuzik/NativeEthernet), [FNET](https://github.com/vjmuzik/FNET)
 
-* RTOS: [FreeRTOS](https://github.com/juliandesvignes/FreeRTOS-Teensy4)
+* RTOS - [FreeRTOS-Teensy4](https://github.com/juliandesvignes/FreeRTOS-Teensy4)
 
-===================================================================
+## Download and Run code #
+**1)** Clone this repository on your controller. Here we take a laptop with Ubuntu 18.04 as an example. In principle the code is independend of the environment, so both Windows and Linux should be ok (not yet been tested).
 
-## Build #
-Download code in path `~/Documents` and run `make_types.sh` if you use lcm-spy to monitor data in real time:
+**2)** Connect all devices together.
+
+**3)** Configure you laptop's local IP as the following recommended settings once the wired network is indetified.
 ```
-git clone https://github.com/Jarvis861/NUS-quadruped-high
-cd NUS-quadruped-high/scripts
-sudo ./make_types.sh
+IPv4 - Manual
+Address: 192.168.137.178
+Netmask: 255.0.0.0
+```
+
+**4)** Compile and run the high-level example code in `demo/udp_c` folder. 
+```
+sudo gcc client.c -o client
+./client
+```
+For the permission error, run
+```
 cd ..
-mkdir build
+sudo chmod u+x ./udp_c -R
 ```
+You can also find Matlab and Python version of high-level code.
 
-Recommend to add shortcut keys in your `.bash_aliases` file:
-```
-gedit ~/.bash_aliases
-```
-and copy following lines to `.bash_aliases`:
-```
 ## CAN BUS
 Joint (bytes): joint command - 48, joint data - 108
 
