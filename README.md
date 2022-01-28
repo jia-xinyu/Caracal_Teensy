@@ -110,6 +110,8 @@ Currently only 2 threads are scheduled.
 * CAN BUS - priority 8; 2 kHz
 
 ## TO DO #
+* Calibrate torque constant (Important!!!)
+
 * Bit checks in UDP and CAN BUS
 
 * Soft stop when an accident happens
