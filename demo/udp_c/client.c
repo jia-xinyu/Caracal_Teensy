@@ -142,15 +142,16 @@ float tau_max = 10.;
 float columb_fric = 3;  // Columb Friction, N.m
 float k = 1;        // energy shaping
 
+// === Method 1 ===
 float gravity_compensation(float p_data) {
     return m * g * l* sin(p_data);
 }
 
+// === Method 2 ===
 // get the sign of a number, 1 for positive, 0 for 0, -1 for negative
 int sgn (float val) {
     return (0.<val) - (val<0.);
 }
-
 float pd_control(float p_data, float v_data, float t) {
     float p_des = (M_PI/2)*sin(t);
     // float p_des = 0;
@@ -160,6 +161,7 @@ float pd_control(float p_data, float v_data, float t) {
     return tau_des;
 }
 
+// === Method 3 ===
 float total_energy(float pos, float vel) {
     return 0.5*m*pow((l*vel),2) + m*g*l*(1.0-cos(pos));
 }
