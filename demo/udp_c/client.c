@@ -141,6 +141,7 @@ float tau_min = -10.;
 float tau_max = 10.;
 float columb_fric = 3;  // Columb Friction, N.m
 float k = 1;        // energy shaping
+float b = 0.1;      // energy shaping
 
 // === Method 1 ===
 float gravity_compensation(float p_data) {
@@ -169,7 +170,7 @@ float energy_shaping(float p_data, float v_data) {
     float current_energy = total_energy(p_data, v_data);
     float des_energy = total_energy(M_PI, 0.);
 
-    return -k * v_data * (current_energy - des_energy);
+    return -k*v_data*(current_energy - des_energy) + b*v_data;
 }
 
 // ------------------------------------
