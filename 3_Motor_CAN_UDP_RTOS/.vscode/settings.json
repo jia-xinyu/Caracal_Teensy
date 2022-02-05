@@ -1,5 +1,11 @@
 {
     "files.associations": {
-        "*.tpp": "cpp"
+        "*.tpp": "cpp",
+        "cmath": "c",
+        "random": "c",
+        "*.tcc": "c",
+        "unistd.h": "c",
+        "math.h": "c",
+        "limits": "c"
     }
 }

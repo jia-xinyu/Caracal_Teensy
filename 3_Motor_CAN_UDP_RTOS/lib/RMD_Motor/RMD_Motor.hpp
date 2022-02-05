@@ -6,7 +6,7 @@
 
 #define RPM_TO_RPS 0.104720  // convert rpm to radian per sec
 #define DEG_TO_RADIAN 0.017453  // PI/180, convert degree to radian
-#define CURRENT_SCALING 43  // 62.06 /* 2048 / 33A */             [TO DO]
+#define CURRENT_SCALING 43*6  // 62.06 = 2048/33A  [TO DO]
 
 // #define ESTOP  // turn ESTOP on or off
 // #define PRINT_DATA  // turn print on or off

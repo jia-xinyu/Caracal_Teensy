@@ -7,6 +7,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <math.h>
+#include <stdbool.h>
 
 #define PORT            8080
 #define SERVER_ADDR     "192.168.137.177"
@@ -128,13 +130,55 @@ struct high2low *send_udp_cmd() {
     return &args_udp.msgs_cmd;
 }
 
+// -----------control-----------------
+float m = 1;        // kg
+float g = 9.81;     // m/s^2
+float l = 0.25;     // m
+float Kp = 15;
+float Kd = 3;
+float dt = 0.001;   // control dt, 1kHz
+float tau_min = -10.;
+float tau_max = 10.;
+float columb_fric = 3;  // Columb Friction, N.m
+float k = 1;        // energy shaping
+
+float gravity_compensation(float p_data) {
+    return m * g * l* sin(p_data);
+}
+
+// get the sign of a number, 1 for positive, 0 for 0, -1 for negative
+int sgn (float val) {
+    return (0.<val) - (val<0.);
+}
+
+float pd_control(float p_data, float v_data, float t) {
+    float p_des = (M_PI/2)*sin(t);
+    // float p_des = 0;
+    float pd_des = 0.;
+    float tau_des = Kp * (p_des - p_data) + Kd * (pd_des - v_data) + sgn(v_data) * columb_fric;
+    // float tau_des = gravity_compensation(p_data) + Kp * (p_des - p_data) + Kd * (pd_des - p_data);
+    return tau_des;
+}
+
+float total_energy(float pos, float vel) {
+    return 0.5*m*pow((l*vel),2) + m*g*l*(1.0-cos(pos));
+}
+float energy_shaping(float p_data, float v_data) {
+    float current_energy = total_energy(p_data, v_data);
+    float des_energy = total_energy(M_PI, 0.);
+
+    return -k * v_data * (current_energy - des_energy);
+}
+
 // ------------------------------------
 int main() {
     init_udp_client();
 
     memset(&_canCommand, 0, sizeof(struct joint_command));
     memset(&_canData, 0, sizeof(struct joint_data));
-    int flag;
+    float position = 0.; float velocity = 0.;
+    bool firstRun = true;  // get data before send command
+    float t = 0.;
 
     while (1) {
         // get pointers
@@ -142,24 +186,44 @@ int main() {
         struct low2high *udp_rx = recv_udp_data();
 
         // ------------input command--------------
-        float torque  = 1;
-        _canCommand.tau_a_des[0] = torque;
+        float tau_des = 0.;
+        switch (2) {
+            case 0:
+                tau_des = 0;
+            case 1:
+                tau_des = gravity_compensation(position);
+                break;
+            case 2:
+                tau_des = pd_control(position, velocity, t);
+                break;
+            case 3:
+                tau_des = energy_shaping(position, velocity);
+                break;
+        }
+        if (firstRun) {
+            tau_des = 0.;
+            firstRun = false;
+        }
+        tau_des = fminf(fmaxf(tau_des, tau_min), tau_max);  // clip max.torque for safety
+        _canCommand.tau_a_des[0] = tau_des;
+
 
         // copy command to UDP tx
         memcpy(&udp_tx->_joint_cmd, &_canCommand, sizeof(struct joint_command));
-        
         // run UDP
         UDP_client_run();
-        
         // receive all sensor data from UDP rx
         memcpy(&_canData, &udp_rx->_joint_data, sizeof(struct joint_data));
 
+
         // ------------output data--------------
-        float position = _canData.q_a[0];
-        printf("[UDP-RT-TASK]: Read position joint a [%f]\n", position); 
+        position = _canData.q_a[0];
+        velocity = _canData.qd_a[0];
+        printf("[UDP-RT-TASK]: Read position joint a [%f]\n", position);
+
+        t = t + dt;
     }
 
     close(sockfd);
-
     return 0;
 }
