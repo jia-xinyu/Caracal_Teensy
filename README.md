@@ -63,19 +63,21 @@ You can also find Matlab and Python version of the high-level code which fails t
 
 ## Control Examples
 **1)** Gravity Compensation
-<br>
-</div>
 <div align="center">
-<img src="https://render.githubusercontent.com/render/math?math=u(\theta) = mgl \sin(\theta)">
-</div>
-<br>   
+<img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = mgl \sin(\theta)">
+</div> 
 
 **2)** Position Control
-<img src="https://render.githubusercontent.com/render/math?math=E(\theta, \dot{\theta}) = \frac{1}{2}ml^2\dot{\theta}^2 - mgl\cos(\theta)">
+<div align="center">
+<img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = \tau_{ff} + K_{p}( \theta_{des} - \theta ) + K_{d}( \dot{\theta_{des}} - \dot{\theta} )">
+</div> 
 
 **3)** Energy Shaping
+<div align="center">
 <img src="https://render.githubusercontent.com/render/math?math=E(\theta, \dot{\theta}) = \frac{1}{2}ml^2\dot{\theta}^2 - mgl\cos(\theta)">
-<img src="https://render.githubusercontent.com/render/math?math=u(\theta, \dot{\theta}) = -k \dot{\theta} \left( E(\theta, \dot{\theta}) - E_{des} \right), \quad k &gt; 0">
+
+<img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = -k \dot{\theta} \left( E(\theta, \dot{\theta}) - E_{des} \right), \quad k &gt; 0">
+</div> 
 
 ## CAN BUS
 The code supports GYEMS-RMD motors with CAN ID `0x141`, `0x142`, `0x143` which means that you must configure the motor ID to 1, 2, 3 by GYEMS software `RMD V2.0.exe` before starting to control motors.
