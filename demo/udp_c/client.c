@@ -73,7 +73,7 @@ int sockfd;
 struct sockaddr_in servaddr;
 int servlen = sizeof(struct sockaddr_in);
 
-// ------------------------------------
+// ----------------UDP-------------------
 void init_udp_client() {
     // Creating socket file descriptor
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
@@ -114,7 +114,6 @@ void udp_task(struct udp_args *args_u) {
     // [TO DO] add warnings
 }
 
-// ------------------------------------
 // run in main
 void UDP_client_run() {
     udp_task(&args_udp);
@@ -130,13 +129,12 @@ struct high2low *send_udp_cmd() {
     return &args_udp.msgs_cmd;
 }
 
-// -----------control-----------------
+// ------------control-----------------
 float m = 1;        // kg
 float g = 9.81;     // m/s^2
 float l = 0.25;     // m
 float Kp = 15;
 float Kd = 3;
-float dt = 0.001;   // control dt, 1kHz
 float tau_limit = 10.;
 float columb_fric = 3.;  // Columb Friction, N.m
 float k = 1.;        // energy shaping
@@ -173,17 +171,20 @@ float energy_shaping(float pos, float vel) {
     return tau_des;
 }
 
-// ------------------------------------
+// ----------------Main function------------------
 int main() {
     init_udp_client();
-
     memset(&_canCommand, 0, sizeof(struct joint_command));
     memset(&_canData, 0, sizeof(struct joint_data));
+
     float q_data = 0.; float qd_data = 0.;
     bool firstRun = true;  // get data before send command
-    float t = 0.;
+    float t = 0.; 
+    float dt = 0.001;   // control dt, 1kHz
+    int runTime = 10;   // s
+    int n = runTime/dt;
 
-    while (1) {
+    for (int i=0; i<n; i++) {
         // get pointers
         struct high2low *udp_tx = send_udp_cmd();
         struct low2high *udp_rx = recv_udp_data();
@@ -198,18 +199,18 @@ int main() {
                 tau_des = gravity_compensation(q_data);
                 break;
             case 2:
-                q_des = (M_PI/2)*sin(t);
+                q_des = (M_PI/2) * sin(t);
                 // float q_des = 0;
                 qd_des = 0.;
                 tau_des = pd_control(q_des, qd_des, q_data, qd_data);
-                // tau_des = gravity_compensation(q_data) + tau_des;
+                // tau_des += gravity_compensation(q_data);
                 break;
             case 3:
                 // switch to position control to keep at the unstable position
                 if (fabs(q_data) < (M_PI-0.2)) {
                     q_des = q_data; qd_des = 0.;
                     tau_des = pd_control(q_des, qd_des, q_data, qd_data);
-                    // tau_des = gravity_compensation(q_data) + tau_des;
+                    tau_des += gravity_compensation(q_data);
                 } else {
                     tau_des = energy_shaping(q_data, qd_data);
                 }
@@ -226,11 +227,9 @@ int main() {
 
 
         // -------------transmit----------------
-        // copy command to UDP tx
+        // copy command to UDP tx, run, receive all sensor data from UDP rx
         memcpy(&udp_tx->_joint_cmd, &_canCommand, sizeof(struct joint_command));
-        // run UDP
         UDP_client_run();
-        // receive all sensor data from UDP rx
         memcpy(&_canData, &udp_rx->_joint_data, sizeof(struct joint_data));
 
 
@@ -239,6 +238,8 @@ int main() {
         qd_data = _canData.qd_a[0];
         printf("[UDP-RT-TASK]: Read position joint a [%f]\n", q_data);
 
+
+        // ----------check frequency------------
         t = t + dt;
     }
 
