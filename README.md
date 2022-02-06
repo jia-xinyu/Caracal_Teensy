@@ -51,7 +51,7 @@ Netmask: 255.0.0.0
 
 **4)** Compile and run the high-level example in `demo/udp_c` folder. 
 ```
-sudo gcc client.c -o client
+sudo gcc client.c -o client -lm
 ./client
 ```
 For the permission error, run
@@ -60,6 +60,22 @@ cd ..
 sudo chmod u+x ./udp_c -R
 ```
 You can also find Matlab and Python version of the high-level code which fails to run due to inconsistent bytes in UDP. Welcome to help debug :-)
+
+## Control Examples
+**1)** Gravity Compensation
+<br>
+</div>
+<div align="center">
+<img src="https://render.githubusercontent.com/render/math?math=u(\theta) = mgl \sin(\theta)">
+</div>
+<br>   
+
+**2)** Position Control
+<img src="https://render.githubusercontent.com/render/math?math=E(\theta, \dot{\theta}) = \frac{1}{2}ml^2\dot{\theta}^2 - mgl\cos(\theta)">
+
+**3)** Energy Shaping
+<img src="https://render.githubusercontent.com/render/math?math=E(\theta, \dot{\theta}) = \frac{1}{2}ml^2\dot{\theta}^2 - mgl\cos(\theta)">
+<img src="https://render.githubusercontent.com/render/math?math=u(\theta, \dot{\theta}) = -k \dot{\theta} \left( E(\theta, \dot{\theta}) - E_{des} \right), \quad k &gt; 0">
 
 ## CAN BUS
 The code supports GYEMS-RMD motors with CAN ID `0x141`, `0x142`, `0x143` which means that you must configure the motor ID to 1, 2, 3 by GYEMS software `RMD V2.0.exe` before starting to control motors.
