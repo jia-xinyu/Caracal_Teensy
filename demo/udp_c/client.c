@@ -137,40 +137,40 @@ float l = 0.25;     // m
 float Kp = 15;
 float Kd = 3;
 float dt = 0.001;   // control dt, 1kHz
-float tau_min = -10.;
-float tau_max = 10.;
-float columb_fric = 3;  // Columb Friction, N.m
-float k = 1;        // energy shaping
+float tau_limit = 10.;
+float columb_fric = 3.;  // Columb Friction, N.m
+float k = 1.;        // energy shaping
 float b = 0.1;      // energy shaping
 
 // === Method 1 ===
-float gravity_compensation(float p_data) {
-    return m * g * l* sin(p_data);
+float gravity_compensation(float q_data) {
+    return m * g * l* sin(q_data);
 }
 
 // === Method 2 ===
-// get the sign of a number, 1 for positive, 0 for 0, -1 for negative
 int sgn (float val) {
-    return (0.<val) - (val<0.);
+    return (0.<val) - (val<0.);  // 1 for positive, 0 for 0, -1 for negative
 }
-float pd_control(float p_data, float v_data, float t) {
-    float p_des = (M_PI/2)*sin(t);
-    // float p_des = 0;
-    float pd_des = 0.;
-    float tau_des = Kp * (p_des - p_data) + Kd * (pd_des - v_data) + sgn(v_data) * columb_fric;
-    // float tau_des = gravity_compensation(p_data) + Kp * (p_des - p_data) + Kd * (pd_des - p_data);
+float pd_control(float q_des, float qd_des, float q_data, float qd_data) {
+    float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data) + sgn(qd_data)*columb_fric;
     return tau_des;
 }
 
 // === Method 3 ===
-float total_energy(float pos, float vel) {
-    return 0.5*m*pow((l*vel),2) + m*g*l*(1.0-cos(pos));
+float total_energy(float position, float velocity) {
+    return 0.5*m*pow((l*velocity),2) + m*g*l*(1.0-cos(position));  // kinetic + potential
 }
-float energy_shaping(float p_data, float v_data) {
-    float current_energy = total_energy(p_data, v_data);
-    float des_energy = total_energy(M_PI, 0.);
+float energy_shaping(float pos, float vel) {
+    float current_energy = total_energy(pos, vel);
+    float des_energy = total_energy(M_PI, 0.);  // push the system towards the upright position
 
-    return -k*v_data*(current_energy - des_energy) + b*v_data;
+    float tau_des = 0.;
+    if (pos==0. && vel==0.) {
+        tau_des = 0.1 * tau_limit;  // start torque
+    } else {
+        tau_des = -k*vel*(current_energy - des_energy) + b*vel;
+    }
+    return tau_des;
 }
 
 // ------------------------------------
@@ -179,7 +179,7 @@ int main() {
 
     memset(&_canCommand, 0, sizeof(struct joint_command));
     memset(&_canData, 0, sizeof(struct joint_data));
-    float position = 0.; float velocity = 0.;
+    float q_data = 0.; float qd_data = 0.;
     bool firstRun = true;  // get data before send command
     float t = 0.;
 
@@ -189,28 +189,43 @@ int main() {
         struct low2high *udp_rx = recv_udp_data();
 
         // ------------input command--------------
-        float tau_des = 0.;
+        float q_des = 0.; float qd_des = 0.; float tau_des = 0.;  // flush command
         switch (2) {
             case 0:
                 tau_des = 0;
+                break;
             case 1:
-                tau_des = gravity_compensation(position);
+                tau_des = gravity_compensation(q_data);
                 break;
             case 2:
-                tau_des = pd_control(position, velocity, t);
+                q_des = (M_PI/2)*sin(t);
+                // float q_des = 0;
+                qd_des = 0.;
+                tau_des = pd_control(q_des, qd_des, q_data, qd_data);
+                // tau_des = gravity_compensation(q_data) + tau_des;
                 break;
             case 3:
-                tau_des = energy_shaping(position, velocity);
+                // switch to position control to keep at the unstable position
+                if (fabs(q_data) < (M_PI-0.2)) {
+                    q_des = q_data; qd_des = 0.;
+                    tau_des = pd_control(q_des, qd_des, q_data, qd_data);
+                    // tau_des = gravity_compensation(q_data) + tau_des;
+                } else {
+                    tau_des = energy_shaping(q_data, qd_data);
+                }
                 break;
         }
         if (firstRun) {
             tau_des = 0.;
             firstRun = false;
         }
-        tau_des = fminf(fmaxf(tau_des, tau_min), tau_max);  // clip max.torque for safety
+        tau_des = fminf(fmaxf(tau_des, -tau_limit), tau_limit);  // clip torque for safety
+
+        // CAN 1, joint A
         _canCommand.tau_a_des[0] = tau_des;
 
 
+        // -------------transmit----------------
         // copy command to UDP tx
         memcpy(&udp_tx->_joint_cmd, &_canCommand, sizeof(struct joint_command));
         // run UDP
@@ -220,9 +235,9 @@ int main() {
 
 
         // ------------output data--------------
-        position = _canData.q_a[0];
-        velocity = _canData.qd_a[0];
-        printf("[UDP-RT-TASK]: Read position joint a [%f]\n", position);
+        q_data = _canData.q_a[0];
+        qd_data = _canData.qd_a[0];
+        printf("[UDP-RT-TASK]: Read position joint a [%f]\n", q_data);
 
         t = t + dt;
     }
