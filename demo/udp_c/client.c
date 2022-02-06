@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <math.h>
 #include <stdbool.h>
+#include <sys/time.h>
 
 #define PORT            8080
 #define SERVER_ADDR     "192.168.137.177"
@@ -133,10 +134,10 @@ struct high2low *send_udp_cmd() {
 float m = 1;        // kg
 float g = 9.81;     // m/s^2
 float l = 0.25;     // m
-float Kp = 15;
-float Kd = 3;
-float tau_limit = 10.;
-float columb_fric = 3.;  // Columb Friction, N.m
+float Kp = 5;
+float Kd = 1;
+float tau_limit = 1.;
+float columb_fric = 0;  // Columb Friction, N.m
 float k = 1.;        // energy shaping
 float b = 0.1;      // energy shaping
 
@@ -151,6 +152,7 @@ int sgn (float val) {
 }
 float pd_control(float q_des, float qd_des, float q_data, float qd_data) {
     float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data) + sgn(qd_data)*columb_fric;
+    // float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data);
     return tau_des;
 }
 
@@ -178,20 +180,24 @@ int main() {
     memset(&_canData, 0, sizeof(struct joint_data));
 
     float q_data = 0.; float qd_data = 0.;
-    bool firstRun = true;  // get data before send command
-    float t = 0.; 
-    float dt = 0.001;   // control dt, 1kHz
-    int runTime = 10;   // s
+    bool firstRun = true;   // get data before send command
+    float dt = 0.002;       // designed control dt, 500Hz
+    int runTime = 10;       // sec
     int n = runTime/dt;
 
-    for (int i=0; i<n; i++) {
+    float meas_dt = 0.;     // measured dt
+    struct timeval start_loop, finish_loop;  // timer
+
+    for (int i = 0; i < n; i++) {
+        gettimeofday(&start_loop, NULL);
+        
         // get pointers
         struct high2low *udp_tx = send_udp_cmd();
         struct low2high *udp_rx = recv_udp_data();
 
         // ------------input command--------------
         float q_des = 0.; float qd_des = 0.; float tau_des = 0.;  // flush command
-        switch (2) {
+        switch (0) {
             case 0:
                 tau_des = 0;
                 break;
@@ -199,8 +205,8 @@ int main() {
                 tau_des = gravity_compensation(q_data);
                 break;
             case 2:
-                q_des = (M_PI/2) * sin(t);
-                // float q_des = 0;
+                // q_des = (M_PI/2) * sin((2*M_PI/10000)*i);
+                q_des = 0;
                 qd_des = 0.;
                 tau_des = pd_control(q_des, qd_des, q_data, qd_data);
                 // tau_des += gravity_compensation(q_data);
@@ -240,7 +246,21 @@ int main() {
 
 
         // ----------check frequency------------
-        t = t + dt;
+        i += 1;
+        int delay_time = dt * 1000000;  // microsecond, us
+        usleep(delay_time);
+
+        gettimeofday(&finish_loop, NULL);
+        int64_t exec_time_ms = (finish_loop.tv_sec-start_loop.tv_sec)*1000 + \
+            (finish_loop.tv_usec-start_loop.tv_usec)/1000;  // millisecond, ms
+        meas_dt = exec_time_ms/1000.0;  // second
+
+        if (meas_dt > dt) {
+            printf("[Main]: Too slow! Control frequency: [%.1f] Hz, Desired frequency: [%.1f] Hz\n", 1/meas_dt, 1/dt);
+        } else {
+            printf("[Main]: Each step time is [%f] sec\n", meas_dt);
+        }
+        printf("\n");
     }
 
     close(sockfd);
