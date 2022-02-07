@@ -69,7 +69,7 @@ You can also find Matlab and Python version of the high-level code which fails t
 
 **2)** Position Control
 <div align="center">
-<img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = \tau_{ff} %2B K_{p}( \theta_{des} - \theta ) %2B K_{d}( \dot{\theta}_{des} - \dot{\theta} )">
+<img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = \tau_{ff} %2B K_{p} ( \theta_{des} - \theta ) %2B K_{d} ( \dot{\theta}_{des} - \dot{\theta} )">
 </div> 
 
 **3)** Energy Shaping Control (Inverted Pendulum)
@@ -77,7 +77,7 @@ You can also find Matlab and Python version of the high-level code which fails t
 <img src="https://render.githubusercontent.com/render/math?math=E(\theta, \dot{\theta}) = \frac{1}{2}ml^2\dot{\theta}^2 %2B mgl \left( 1 - \cos(\theta) \right)">
 </div> 
 <div align="center">
-<img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = -k \dot{\theta} \left( E - E_{des} \right) %2B b \dot{\theta}, \quad k &gt; 0, \quad b &gt; 0">
+<img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = -k \dot{\theta} \left( E_{des} - E \right) %2B b \dot{\theta}, \quad k &gt; 0, \quad b &gt; 0">
 </div> 
 
 ## CAN BUS
