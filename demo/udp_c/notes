@@ -1,5 +1,0 @@
-sudo chmod u+x ./udp_c -R
-
-sudo gcc client.c -o client
-./client
-
