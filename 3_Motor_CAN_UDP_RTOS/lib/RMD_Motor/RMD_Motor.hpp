@@ -4,9 +4,11 @@
 #include <FlexCAN_T4.h>
 #include "joint_message.hpp"
 
-#define RPM_TO_RPS 0.104720  // convert rpm to radian per sec
+#define RPM_TO_RPS 0.104720     // convert rpm to radian per sec
 #define DEG_TO_RADIAN 0.017453  // PI/180, convert degree to radian
-#define CURRENT_SCALING 43*6  // 62.06 = 2048/33A  [TO DO]
+// #define CURRENT_SCALING 43      // X8-Pro-6:1, mannual: 62.06 = 2048/33A
+#define CURRENT_SCALING 165     // L7015-10T
+// #define CURRENT_SCALING 3800    // L5010-10T
 
 // #define ESTOP  // turn ESTOP on or off
 // #define PRINT_DATA  // turn print on or off
