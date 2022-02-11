@@ -88,9 +88,6 @@ for i = 1:10000
         tau_a = joint_data(19:21,1);
         tau_b = joint_data(22:24,1);
         tau_c = joint_data(25:27,1);
-           
-        joint_a = q_a(1);
-        disp(joint_a);
     end
 end
 
