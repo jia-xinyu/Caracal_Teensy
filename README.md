@@ -61,7 +61,7 @@ For the permission error, run
 cd ..
 sudo chmod u+x ./udp_c -R
 ```
-You can also find Matlab and Python version of the high-level code which fails to run due to inconsistent bytes in UDP. Welcome to help debug :-)
+You can also find **Matlab** and **Python** version of the high-level code. (However, currently Python version cannot work due to inconsistent bytes in UDP. Welcome to debug :-)
 
 ## Control Examples
 **1)** Gravity Compensation
@@ -154,4 +154,4 @@ Currently only 2 threads are scheduled.
 
 * Remove or uncomment all `Serial.print` or `Serial.println` functions since they affect threads running
 
-* Debug MATLAB and Python version of high-level examples
+* Debug Python version of high-level examples
