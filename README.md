@@ -42,14 +42,16 @@ This repository functions as a hardware bridge between high-level controllers wi
 
 **2)** Connect all devices together.
 
-**3)** Configure you laptop's local IP as the following recommended settings once the wired network is indetified.
+**3)** Configure your laptop's local IP as the following recommended settings once the wired network is indetified.
 ```
 IPv4 - Manual
 Address: 192.168.137.178
 Netmask: 255.0.0.0
 ```
 
-**4)** Compile and run the high-level example in `demo/udp_c` folder. 
+**4)** Configure correct **[torque constant](https://github.com/Jarvis861/Caracal_Teensy/blob/68ac30157ff4010556ba0d79196818360fe799db/3_Motor_CAN_UDP_RTOS/lib/RMD_Motor/RMD_Motor.hpp#L9-L11)** and **[reduction ratio](https://github.com/Jarvis861/Caracal_Teensy/blob/68ac30157ff4010556ba0d79196818360fe799db/3_Motor_CAN_UDP_RTOS/lib/RMD_Motor/RMD_Motor.cpp#L34)** for the actuator.
+
+**5)** Compile and run the high-level example in `demo/udp_c` folder. 
 ```
 sudo gcc client.c -o client -lm
 ./client
@@ -112,6 +114,8 @@ float tau_c[3];
 ```
 So set the send buffer to `TX_SIZE_32` (64 bytes) and the receive buffer to `RX_SIZE_64` (128 bytes).
 
+You can use [PCAN-View](https://www.peak-system.com/PCAN-USB.199.0.html) to monitor CAN BUS ports.
+
 ## UDP #
 The UDP rx message includes
 ```
@@ -124,6 +128,17 @@ force data = xx
 ```
 So set the receive buffer `RX_MAX_SIZE` to 48 bytes while `TX_MAX_SIZE` is 108 bytes currently. Similarly, in high-level control code, set UDP socket buffer `SO_SNDBUF` = 48 bytes, `SO_RCVBUF` = 108 bytes. 
 
+You can use [tcpdump](https://blog.csdn.net/Kernel_Heart/article/details/113390783) to monitor Ethernet ports. Here the port name of my laptop is `enx3c18a079c733` and the Teensy's IP and port are `192.168.137.177`, `8080`.
+
+* Check the messages sent to the Teensy 
+```
+sudo tcpdump -i enx3c18a079c733 -nnX 'dst host 192.168.137.177 and port 8080'
+```
+* Check the messages received by the laptop 
+```
+sudo tcpdump -i enx3c18a079c733 -nnX 'src host 192.168.137.177 and port 8080'
+```
+
 ## RTOS #
 Currently only 2 threads are scheduled.
 * UDP - priority 9; 1 kHz
@@ -131,8 +146,6 @@ Currently only 2 threads are scheduled.
 * CAN BUS - priority 8; 2 kHz
 
 ## TO DO #
-* Calibrate torque constant (Important!!!)
-
 * Bit checks in UDP and CAN BUS
 
 * Soft stop when an accident happens
