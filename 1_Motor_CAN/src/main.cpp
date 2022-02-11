@@ -88,15 +88,15 @@ void loop() {
   }
 
   // must wait 2 us otherwise RX cannot work
-  can1.write(msg_pos1); delay(0.002); 
-  can1.write(msg_pos2); delay(0.002); 
-  can1.write(msg_pos3); delay(0.002); 
+  can1.write(msg_pos1);
+  can1.write(msg_pos2);
+  can1.write(msg_pos3);
 
-  can2.write(msg_pos1); delay(0.002); 
-  can2.write(msg_pos2); delay(0.002); 
-  can2.write(msg_pos3); delay(0.002); 
+  can2.write(msg_pos1);
+  can2.write(msg_pos2);
+  can2.write(msg_pos3);
 
-  can3.write(msg_pos1); delay(0.002); 
-  can3.write(msg_pos2); delay(0.002); 
-  can3.write(msg_pos3); delay(0.002); 
+  can3.write(msg_pos1);
+  can3.write(msg_pos2);
+  can3.write(msg_pos3);
 }

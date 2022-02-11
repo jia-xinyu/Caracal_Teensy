@@ -134,10 +134,10 @@ struct high2low *send_udp_cmd() {
 float m = 1;            // kg
 float g = 9.81;         // m/s^2
 float l = 0.25;         // m
-float Kp = 0.4;
-float Kd = 0.01;
-float tau_limit = 1.;   // N.m, L5010-10T (0.26), L7015-10T (1x30)
-float columb_fric = 2.5;  // Columb Friction, N.m
+float Kp = 40;
+float Kd = 3;
+float tau_limit = 30.;   // N.m, L5010-10T (0.26), L7015-10T (1x30)
+float columb_fric = 0.15;  // Columb Friction, N.m
 float k = 1.;           // energy shaping
 float b = 0.1;          // energy shaping
 
@@ -151,8 +151,8 @@ int sgn (float val) {
     return (0.<val) - (val<0.);  // 1 for positive, 0 for 0, -1 for negative
 }
 float pd_control(float q_des, float q_data, float qd_des, float qd_data) {
-    // float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data) + sgn(qd_data)*columb_fric;
-    float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data);
+    float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data) + sgn(qd_des)*columb_fric;
+    // float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data);
     return tau_des;
 }
 
@@ -209,7 +209,7 @@ int main() {
 
         // ------------input command--------------
         float q_des = 0.; float qd_des = 0.; float tau_des = 0.;  // flush command
-        switch (0) {
+        switch (2) {
             case 0:
                 tau_des = 0;  // measure Columb friction
                 break;
@@ -217,9 +217,9 @@ int main() {
                 tau_des = gravity_compensation(q_data);
                 break;
             case 2:
-                // q_des = (M_PI/2) * sin((2*M_PI/2)*i);
-                q_des = 0;
-                qd_des = 0.;
+                q_des = 0; qd_des = 0.;
+                q_des = (M_PI/2) * sin((2*M_PI/2)*dt*i);  // cycle = 2 sec
+                qd_des = (M_PI/2) * (M_PI*dt) * cos((2*M_PI/2)*dt*i);
                 tau_des = pd_control(q_des, q_data, qd_des, qd_data);
                 // tau_des += gravity_compensation(q_data);
                 break;
@@ -269,7 +269,7 @@ int main() {
         // ----------check frequency------------
         i += 1;
         int delay_time = dt * 1000000;  // microsecond, us
-        // usleep(delay_time);
+        usleep(delay_time);
 
         gettimeofday(&finish_loop, NULL);
         int64_t exec_time_ms = (finish_loop.tv_sec-start_loop.tv_sec)*1000 + \
