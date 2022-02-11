@@ -38,7 +38,8 @@ This repository functions as a hardware bridge between high-level controllers wi
 * RTOS - [FreeRTOS-Teensy4](https://github.com/juliandesvignes/FreeRTOS-Teensy4)
 
 ## How to run #
-**1)** Clone this repository on your PC or controller, build the Arduino project in `3_Motor_CAN_UDP_RTOS` folder and then upload to Teensy. Here we take a laptop with Ubuntu 18.04 as a high-level controller. In principle the code is independend of the environment, so both Windows and Linux should be OK (not yet been tested).
+Here we take a laptop with Ubuntu 18.04 as a high-level controller. In principle the code is independend of the environment, so both Windows and Linux should be OK (not yet been tested).
+**1)** Clone this repository on your laptop. If you are using `GYEMS-RMD L7015-10T` motors, you can directly build the Arduino project in `3_Motor_CAN_UDP_RTOS` folder and then upload to Teensy; otherwise, configure correct **[torque constant](https://github.com/Jarvis861/Caracal_Teensy/blob/68ac30157ff4010556ba0d79196818360fe799db/3_Motor_CAN_UDP_RTOS/lib/RMD_Motor/RMD_Motor.hpp#L9-L11)** and **[reduction ratio](https://github.com/Jarvis861/Caracal_Teensy/blob/68ac30157ff4010556ba0d79196818360fe799db/3_Motor_CAN_UDP_RTOS/lib/RMD_Motor/RMD_Motor.cpp#L34)** first.
 
 **2)** Connect all devices together.
 
@@ -49,9 +50,7 @@ Address: 192.168.137.178
 Netmask: 255.0.0.0
 ```
 
-**4)** Configure correct **[torque constant](https://github.com/Jarvis861/Caracal_Teensy/blob/68ac30157ff4010556ba0d79196818360fe799db/3_Motor_CAN_UDP_RTOS/lib/RMD_Motor/RMD_Motor.hpp#L9-L11)** and **[reduction ratio](https://github.com/Jarvis861/Caracal_Teensy/blob/68ac30157ff4010556ba0d79196818360fe799db/3_Motor_CAN_UDP_RTOS/lib/RMD_Motor/RMD_Motor.cpp#L34)** for the actuator.
-
-**5)** Compile and run the high-level example in `demo/udp_c` folder. 
+**4)** Compile and run the high-level example in `demo/udp_c` folder. 
 ```
 sudo gcc client.c -o client -lm
 ./client
