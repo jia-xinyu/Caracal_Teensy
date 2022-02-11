@@ -31,7 +31,7 @@ rx_size = 108;
 
 %% init
 % local IP (keep first three sections same as remote IP)
-ip_local = '192.168.137.178'; port_local = 5330;
+ip_local = '192.168.137.178'; port_local = 5329;
 
 % remtoe IP
 ip_remote = '192.168.137.177'; port_remote = 8080;
@@ -61,7 +61,7 @@ end
 % number: fwrite(send) / fread(recv)
 
 %% input command
-tau_a_des = [1,1,1];
+tau_a_des = [1,1,50];
 tau_b_des = [30,50,50];
 tau_c_des = [10,50,50];
 flags = [1,1,1];
@@ -72,6 +72,7 @@ joint_command = single([tau_a_des, tau_b_des, tau_c_des, flags]);
 udp_tx = reshape(joint_command, 12, 1);
 % whos udp_tx
 
+%udp_tx = num2str(udp_tx)
 udp_tx = typecast(udp_tx,'uint8');
 fwrite(udp_m, udp_tx, 'uint8');
 

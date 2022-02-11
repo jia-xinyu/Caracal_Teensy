@@ -84,6 +84,13 @@ void server_task(struct udp_args *args_u) {
     // read the packet into packetBufffer
     udp.read(recv_buffer, RX_MAX_SIZE);
 
+    #ifdef PRINT_SIZE
+    for(int i = 0; i < RX_MAX_SIZE; i++) {
+      Serial.print(recv_buffer[i], DEC); Serial.print(".");
+    }
+    Serial.println(" ");
+    #endif
+
     // copy received command from UDP rx and copy all data to UDP tx
     memcpy(&args_u->msgs_cmd, &recv_buffer, sizeof(high2low));
     memcpy(&send_buffer, &args_u->msgs_data, sizeof(low2high));
