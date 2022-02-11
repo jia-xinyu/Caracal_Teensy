@@ -90,7 +90,7 @@ void server_task(struct udp_args *args_u) {
 
     // send back the reply to the IP address and port
     udp.beginPacket(udp.remoteIP(), udp.remotePort());
-    udp.write(send_buffer);
+    udp.write(send_buffer, TX_MAX_SIZE);
     udp.endPacket();
   } else {
     // zero cmd if udp is not connected  [TO DO] use soft stop

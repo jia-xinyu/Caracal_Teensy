@@ -5,8 +5,8 @@
 #include <NativeEthernetUdp.h>
 #include "joint_message.hpp"
 
-#define RX_MAX_SIZE 48  // 24
-#define TX_MAX_SIZE 108  // 24
+#define RX_MAX_SIZE 48  // Bytes
+#define TX_MAX_SIZE 108  // Bytes
 // #define PRINT_SIZE
 
 // 16 bytes

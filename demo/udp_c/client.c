@@ -134,9 +134,9 @@ struct high2low *send_udp_cmd() {
 float m = 1;            // kg
 float g = 9.81;         // m/s^2
 float l = 0.25;         // m
-float Kp = 3;
-float Kd = 0;
-float tau_limit = 10.;   // N.m, L5010-10T (0.26), L7015-10T (1x30)
+float Kp = 0.4;
+float Kd = 0.01;
+float tau_limit = 1.;   // N.m, L5010-10T (0.26), L7015-10T (1x30)
 float columb_fric = 2.5;  // Columb Friction, N.m
 float k = 1.;           // energy shaping
 float b = 0.1;          // energy shaping
@@ -151,8 +151,8 @@ int sgn (float val) {
     return (0.<val) - (val<0.);  // 1 for positive, 0 for 0, -1 for negative
 }
 float pd_control(float q_des, float q_data, float qd_des, float qd_data) {
-    float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data) + sgn(qd_data)*columb_fric;
-    // float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data);
+    // float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data) + sgn(qd_data)*columb_fric;
+    float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data);
     return tau_des;
 }
 
@@ -194,7 +194,7 @@ int main() {
     float q_data = 0.; float qd_data = 0.; float tau_data = 0.;
     bool firstRun = true;   // get data before send command
     float dt = 0.002;       // designed control dt, 500Hz
-    int runTime = 100000;       // sec
+    int runTime = 10000;    // sec
     int n = runTime/dt;
 
     float meas_dt = 0.;     // measured dt
@@ -209,9 +209,9 @@ int main() {
 
         // ------------input command--------------
         float q_des = 0.; float qd_des = 0.; float tau_des = 0.;  // flush command
-        switch (2) {
+        switch (0) {
             case 0:
-                tau_des = 2.5;  // measure Columb friction
+                tau_des = 0;  // measure Columb friction
                 break;
             case 1:
                 tau_des = gravity_compensation(q_data);
@@ -257,12 +257,12 @@ int main() {
         tau_data = _canData.tau_a[0];
 
         // ------------print result--------------
-        #if 1
+        #if 0
         printf("[UDP-RT-TASK]: Send torque [%f]\n", tau_des);
         printf("[UDP-RT-TASK]: Read position [%f], velocity [%f], torque [%f]\n", q_data, qd_data, tau_data);
 		// #else
         fprintf(fp, "%d %.3f %.3f %.3f %.3f %.3f %.3f \n", i, \
-			q_des, q_data, qd_des, q_data, tau_des, tau_data);
+			q_des, q_data, qd_des, qd_data, tau_des, tau_data);
 		#endif
 
 

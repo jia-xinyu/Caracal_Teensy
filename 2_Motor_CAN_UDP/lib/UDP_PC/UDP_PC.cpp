@@ -81,6 +81,15 @@ void udp_recv() {
 
     // copy received command from UDP rx and copy all data to UDP tx
     memcpy(&args_udp.msgs_cmd, &recv_buffer, sizeof(high2low));
+  } else {
+    // zero cmd if udp is not connected  [TO DO] use soft stop
+    for (int i = 0; i < 3; i++) {
+      args_udp.msgs_cmd._joint_cmd.tau_a_des[i] = 0.0;
+      args_udp.msgs_cmd._joint_cmd.tau_b_des[i] = 0.0;
+      args_udp.msgs_cmd._joint_cmd.tau_c_des[i] = 0.0;
+    }
+    // print warnings as few as possible since they affect threads
+    // Serial.println("waiting for command ...");
   }
 }
 
@@ -89,6 +98,6 @@ void udp_send() {
   memcpy(&send_buffer, &args_udp.msgs_data, sizeof(low2high));
 
   udp.beginPacket(udp.remoteIP(), udp.remotePort());
-  udp.write(send_buffer);
+  udp.write(send_buffer, TX_MAX_SIZE);
   udp.endPacket();
 }
