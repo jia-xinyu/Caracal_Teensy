@@ -217,7 +217,7 @@ int main() {
                 tau_des = gravity_compensation(q_data);
                 break;
             case 2:
-                q_des = 0; qd_des = 0.;
+                // q_des = 0; qd_des = 0.;
                 q_des = (M_PI/2) * sin((2*M_PI/2)*dt*i);  // cycle = 2 sec
                 qd_des = (M_PI/2) * (M_PI*dt) * cos((2*M_PI/2)*dt*i);
                 tau_des = pd_control(q_des, q_data, qd_des, qd_data);
@@ -260,7 +260,7 @@ int main() {
         #if 0
         printf("[UDP-RT-TASK]: Send torque [%f]\n", tau_des);
         printf("[UDP-RT-TASK]: Read position [%f], velocity [%f], torque [%f]\n", q_data, qd_data, tau_data);
-		// #else
+		#else
         fprintf(fp, "%d %.3f %.3f %.3f %.3f %.3f %.3f \n", i, \
 			q_des, q_data, qd_des, qd_data, tau_des, tau_data);
 		#endif
