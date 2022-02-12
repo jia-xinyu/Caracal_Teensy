@@ -10,8 +10,8 @@ def create_figures():
 	kp = []; q_des = []; q = []; kd = []; qd_des = []; qd = []; 
 	tau_ff = []; tau_des = []; tau = []
 
-	# read from 300th line
-	for line in f.readlines()[300:]:
+	# read from 2nd line
+	for line in f.readlines()[2:]:
 		line = line.strip('\n')
 		line = line.split(' ')
 

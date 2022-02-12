@@ -61,7 +61,14 @@ For the permission error, run
 cd ..
 sudo chmod u+x ./udp_c -R
 ```
-You can also find **Matlab** and **Python** version of the high-level code. (However, currently Python version cannot work due to inconsistent bytes in UDP. Welcome to debug :-)
+
+**5)** Plot test results
+```
+./plot_result.py
+```
+Delete the last incomplete line in `actuator_data.txt` if you meet the error `IndexError: list index out of range`.
+
+You can also find **Matlab** version of the high-level code. However, Matlab cannot run in real time without specific hardware so be careful to use it :-)
 
 ## Control Examples
 **1)** Gravity Compensation
@@ -154,4 +161,3 @@ Currently only 2 threads are scheduled.
 
 * Remove or uncomment all `Serial.print` or `Serial.println` functions since they affect threads running
 
-* Debug Python version of high-level examples

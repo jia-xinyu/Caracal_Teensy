@@ -1,35 +1,21 @@
 clc
 clear
 
-%% message
+%% init message
 % --- 48 bytes ---
-tau_a_des = zeros(3,1,'single');
-tau_b_des = zeros(3,1,'single');
-tau_c_des = zeros(3,1,'single');
+[tau_a_des, tau_b_des, tau_c_des] = deal(zeros(3,1,'single'));
 flags = zeros(3,1,'int32');
-% checksum = zeros(3,1,'int32');  % be careful of int
-
-% --- 108 bytes ---
-q_a = zeros(3,1,'single'); 
-q_b = zeros(3,1,'single');
-q_c = zeros(3,1,'single');
-qd_a = zeros(3,1,'single');
-qd_b = zeros(3,1,'single');
-qd_c = zeros(3,1,'single');
-tau_a = zeros(3,1,'single');
-tau_b = zeros(3,1,'single');
-tau_c = zeros(3,1,'single');
-% flags = zeros(3,1,'int32');
 % checksum = zeros(3,1,'int32');
 
-% check size
-% whos joint_command
-% whos joint_data
+% --- 108 bytes ---
+[q_a, q_b, q_c, qd_a, qd_b, qd_c, tau_a, tau_b, tau_c] = deal(zeros(3,1,'single')); 
+% flags = zeros(3,1,'int32');
+% checksum = zeros(3,1,'int32');
 
 tx_size = 48;
 rx_size = 108;
 
-%% init
+%% init UDP
 % local IP (keep first three sections same as remote IP)
 ip_local = '192.168.137.178'; port_local = 8080;
 
@@ -59,15 +45,27 @@ end
 % char: fprint(send) / fscanf(recv)
 % number: fwrite(send) / fread(recv)
 
-%% input command
-tau_a_des = [0;0;0;];
+%% controller parameters
+Kp = 40; Kd = 3; tau_limit = 30;
+q_data = 0; qd_data = 0;
 
 %% send command and receive data
 for i = 1:10000
+    % --- controller ---
+    q_des = 0; qd_des = 0;
+	% q_des = (pi/2) * sin((2*M_PI/2)*i);
+	% qd_des = (pi/2) * (pi) * cos((2*pi/2)*i);
+    tau_des = Kp * (q_des-q_data) + Kd * (qd_des-qd_data);
+    tau_des = min([max([tau_des, -tau_limit]), tau_limit]);
+    % disp(tau_des);
+    
+    % --- input command ---
+    tau_a_des(1) = tau_des;
+    
     % --- pack ---
     joint_command = single([tau_a_des; tau_b_des; tau_c_des; flags;]);
     joint_command = reshape(joint_command, [12,1]);
-    % whos joint_command
+    % whos joint_command  % check size
 
     udp_tx = typecast(joint_command,'uint8');
     fwrite(udp_m, udp_tx, 'uint8');
@@ -78,17 +76,21 @@ for i = 1:10000
         
         % --- unpack ---
         % joint_data = single([q_a; q_b; q_c; qd_a; qd_b; qd_c; tau_a; tau_b; tau_c;]);
+        % whos joint_data  % check size
         joint_data = reshape(udp_rx, [27,1]);
-        q_a = joint_data(1:3,1);
-        q_b = joint_data(4:6,1);
-        q_c = joint_data(7:9,1);
-        qd_a = joint_data(10:12,1);
-        qd_b = joint_data(13:15,1);
-        qd_c = joint_data(16:18,1);
-        tau_a = joint_data(19:21,1);
-        tau_b = joint_data(22:24,1);
-        tau_c = joint_data(25:27,1);
+        q_a = joint_data(1:3);
+        q_b = joint_data(4:6);
+        q_c = joint_data(7:9);
+        qd_a = joint_data(10:12);
+        qd_b = joint_data(13:15);
+        qd_c = joint_data(16:18);
+        tau_a = joint_data(19:21);
+        tau_b = joint_data(22:24);
+        tau_c = joint_data(25:27);
     end
+    
+    % --- output data ---
+    q_data = q_a(1); qd_data = qd_a(1);
 end
 
 %% close
