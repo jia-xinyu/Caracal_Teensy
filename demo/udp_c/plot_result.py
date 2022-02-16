@@ -50,7 +50,7 @@ def create_figures():
 	ax3 = plt.subplot(1,3,3)
 	ax3.plot(num, tau_des, color='red', label='tau_des')
 	# ax3.plot(num, tau_ff, color='orange', label='tau_ff')
-	ax3.plot(num, tau, color='magenta', label='tau')
+	# ax3.plot(num, tau, color='magenta', label='tau')
 	plt.xlabel('time (ms)')
 	plt.ylabel('Joint Torque (N.m)')
 	ax3.grid(True)

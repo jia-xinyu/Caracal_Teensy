@@ -74,6 +74,7 @@ int sockfd;
 struct sockaddr_in servaddr;
 int servlen = sizeof(struct sockaddr_in);
 
+
 // ----------------UDP-------------------
 void init_udp_client() {
     // Creating socket file descriptor
@@ -130,16 +131,21 @@ struct high2low *send_udp_cmd() {
     return &args_udp.msgs_cmd;
 }
 
+
 // ------------control-----------------
-float m = 1;            // kg
+float m = 5;          // kg
 float g = 9.81;         // m/s^2
 float l = 0.25;         // m
-float Kp = 40;
+float Kp = 35;
 float Kd = 3;
-float tau_limit = 30.;   // N.m, L5010-10T (0.26), L7015-10T (1x30)
-float columb_fric = 0.15;  // Columb Friction, N.m
+float Ki = 0.1;         // useless 
+float tau_limit = 40.;  // N.m, L5010-10T (0.26), L7015-10T (1x30)
+float columb_fric = 2;  // Columb Friction, N.m
 float k = 1.;           // energy shaping
 float b = 0.1;          // energy shaping
+
+float dt = 0.002;       // designed control dt, 500Hz
+int runTime = 10000;    // sec
 
 // === Method 1 ===
 float gravity_compensation(float q_data) {
@@ -150,9 +156,17 @@ float gravity_compensation(float q_data) {
 int sgn (float val) {
     return (0.<val) - (val<0.);  // 1 for positive, 0 for 0, -1 for negative
 }
+float errors = 0.; 
 float pd_control(float q_des, float q_data, float qd_des, float qd_data) {
-    float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data) + sgn(qd_des)*columb_fric;
-    // float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data);
+    #if 1
+    // --- PD ---
+    float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data);
+    #else
+    // --- PID ---
+    errors += q_des - q_data;
+    float tau_des = Kp*(q_des - q_data) + Kd*(qd_des - qd_data) + Ki*errors*dt;
+    #endif
+
     return tau_des;
 }
 
@@ -172,6 +186,7 @@ float energy_shaping(float pos, float vel) {
     }
     return tau_des;
 }
+
 
 // ----------------Main function------------------
 int main() {
@@ -193,8 +208,6 @@ int main() {
 
     float q_data = 0.; float qd_data = 0.; float tau_data = 0.;
     bool firstRun = true;   // get data before send command
-    float dt = 0.002;       // designed control dt, 500Hz
-    int runTime = 10000;    // sec
     int n = runTime/dt;
 
     float meas_dt = 0.;     // measured dt
@@ -217,18 +230,21 @@ int main() {
                 tau_des = gravity_compensation(q_data);
                 break;
             case 2:
-                q_des = 0; qd_des = 0.;
-                // q_des = (M_PI/2) * sin((2*M_PI/2)*dt*i);  // cycle = 2 sec
-                // qd_des = (M_PI/2) * (M_PI*dt) * cos((2*M_PI/2)*dt*i);
+                // q_des = M_PI/6; qd_des = 0.;
+                // q_des = (M_PI/4) * sin((2*M_PI/16)*dt*i);  // cycle = 16 sec
+                // qd_des = (M_PI/4) * (M_PI*dt/8) * cos((2*M_PI/16)*dt*i);
+                q_des = (M_PI/2) * sin((2*M_PI/400000)*i);
+                qd_des = (M_PI/2) * (M_PI/200000) * cos((2*M_PI/400000)*i);
                 tau_des = pd_control(q_des, q_data, qd_des, qd_data);
-                // tau_des += gravity_compensation(q_data);
+                tau_des += sgn(qd_des)*columb_fric;
+                tau_des += gravity_compensation(q_data);
                 break;
             case 3:
                 // switch to position control to keep at the unstable position
                 if (fabs(q_data) < (M_PI-0.2)) {
                     q_des = q_data; qd_des = 0.;
                     tau_des = pd_control(q_des, q_data, qd_des, qd_data);
-                    tau_des += gravity_compensation(q_data);
+                    tau_des += gravity_compensation(q_data) + sgn(qd_des)*columb_fric;
                 } else {
                     tau_des = energy_shaping(q_data, qd_data);
                 }
@@ -257,10 +273,10 @@ int main() {
         tau_data = _canData.tau_a[0];
 
         // ------------print result--------------
-        #if 0
+        #if 1
         printf("[UDP-RT-TASK]: Send torque [%f]\n", tau_des);
         printf("[UDP-RT-TASK]: Read position [%f], velocity [%f], torque [%f]\n", q_data, qd_data, tau_data);
-		#else
+		// #else
         fprintf(fp, "%d %.3f %.3f %.3f %.3f %.3f %.3f \n", i, \
 			q_des, q_data, qd_des, qd_data, tau_des, tau_data);
 		#endif
@@ -269,7 +285,7 @@ int main() {
         // ----------check frequency------------
         i += 1;
         int delay_time = dt * 1000000;  // microsecond, us
-        usleep(delay_time);
+        // usleep(delay_time);
 
         gettimeofday(&finish_loop, NULL);
         int64_t exec_time_ms = (finish_loop.tv_sec-start_loop.tv_sec)*1000 + \
