@@ -133,14 +133,14 @@ struct high2low *send_udp_cmd() {
 
 
 // ------------control-----------------
-float m = 5;          // kg
+float m = 2.5;          // kg
 float g = 9.81;         // m/s^2
 float l = 0.25;         // m
-float Kp = 35;
-float Kd = 3;
+float Kp = 35;          // L5010-10T (9), L7015-10T (35)
+float Kd = 3;           // L5010-10T (1), L7015-10T (3)
 float Ki = 0.1;         // useless 
-float tau_limit = 40.;  // N.m, L5010-10T (0.26), L7015-10T (1x30)
-float columb_fric = 2;  // Columb Friction, N.m
+float tau_limit = 30.;  // N.m, L5010-10T (0.26x50), L7015-10T (1x30)
+float columb_fric = 2;  // Columb Friction, N.m, L5010-10T (0.25), L7015-10T (2)
 float k = 1.;           // energy shaping
 float b = 0.1;          // energy shaping
 
