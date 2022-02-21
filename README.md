@@ -93,10 +93,10 @@ You can also find **Matlab** version of the high-level code. However, Matlab can
 * From left to right: Running Actuator; Step Response; Gravity Compensation; Position Control
 
 <div align="center">
-<img width="252" src="doc/actuator.gif">
-<img width="223" src="doc/step_response.gif">
-<img width="210" src="doc/gravity_compensation.gif">
-<img width="210" src="doc/position_control.gif">
+<img width="242" src="doc/actuator.gif">
+<img width="213" src="doc/step_response.gif">
+<img width="200" src="doc/gravity_compensation.gif">
+<img width="200" src="doc/position_control.gif">
 </div>
 
 ## CAN BUS
