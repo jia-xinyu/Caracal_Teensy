@@ -23,7 +23,8 @@ This repository functions as a hardware bridge between high-level controllers wi
 * Carrier Board - [Official](https://copperhilltech.com/teensy-4-1-triple-can-bus-board-with-240x240-lcd-and-ethernet/) or Self-customized
 
 <div align="center">
-<img width="300" src="doc/Teens4_1.jpg">
+<img width="250" src="doc/Teens4_1.jpg">
+<img width="500" src="doc/architecture.jpg">
 </div>
 
 ## Dependencies #
@@ -88,6 +89,15 @@ You can also find **Matlab** version of the high-level code. However, Matlab can
 <div align="center">
 <img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = k \dot{\theta} \left( E_{des} - E \right) %2B b \dot{\theta}, \quad k &gt; 0, \quad b &gt; 0">
 </div> 
+
+* From left to right: Running Actuator; Step Response; Gravity Compensation; Position Control
+
+<div align="center">
+<img width="232" src="doc/actuator.gif">
+<img width="203" src="doc/step_response.gif">
+<img width="190" src="doc/gravity_compensation.gif">
+<img width="190" src="doc/position_control.gif">
+</div>
 
 ## CAN BUS
 The code supports GYEMS-RMD motors with CAN ID `0x141`, `0x142`, `0x143` which means that you must configure the motor ID to 1, 2, 3 by GYEMS software `RMD V2.0.exe` before starting to control motors.
