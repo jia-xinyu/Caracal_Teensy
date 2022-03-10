@@ -31,7 +31,7 @@ float min_a[3] = {0, 0, 0}; float max_a[3] = {0, 0, 0};
 float min_b[3] = {0, 0, 0}; float max_b[3] = {0, 0, 0};
 float min_c[3] = {0, 0, 0}; float max_c[3] = {0, 0, 0};
 // tranmission ratio
-float ratio[3] = {30, 1, 1};
+float ratio[3] = {50, 1, 1};
 
 // [TO DO] EStop
 void estop() {
