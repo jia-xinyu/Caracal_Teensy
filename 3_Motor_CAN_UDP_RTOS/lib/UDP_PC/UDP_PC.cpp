@@ -11,8 +11,8 @@
 
 // Define a MAC address and IP address for Teensy 4.1
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
-IPAddress ip(192, 168, 137, 177);
-unsigned int localPort = 8080;  // local port to listen on
+IPAddress ip(192, 168, 137, 177); // 177 - left arm; 179 - right
+unsigned int localPort = 8080;    // local port to listen on
 
 EthernetUDP udp;  // an EthernetUDP instance
 

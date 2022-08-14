@@ -42,12 +42,12 @@ struct joint_data {
     // int32_t checksum;
 };
 
-// ------------------------------------
 // 16 bytes
 struct force_data {
   float f_r[4];
 };
 
+// ------------------------------------
 // 108 bytes
 struct low2high {
   struct joint_data _joint_data;
@@ -85,11 +85,13 @@ void init_udp_client() {
 
     // check and set buffer size
     int recv_size, send_size;
+
     // RX buffer
     uint32_t optLen1 = sizeof(recv_size);
     recv_size = sizeof(args_udp.msgs_data);
     setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF, (char *)&recv_size, optLen1);
     printf("[UDP-RT-TASK]: Recv Buffer length: %d\n", recv_size);  // 108
+
     // TX buffer
     uint32_t optLen2 = sizeof(send_size);
     send_size = sizeof(args_udp.msgs_cmd);
@@ -136,8 +138,8 @@ struct high2low *send_udp_cmd() {
 float m = 5;          // kg
 float g = 9.81;         // m/s^2
 float l = 0.25;         // m
-float Kp = 10;          // L5010-10T (9), L5015-10T (10), L7010-23T (19), L7015-10T (35)
-float Kd = 1;           // L5010-10T (1), L5015-10T (1), L7010-23T (3), L7015-10T (3)
+float Kp = 0.0051;          // L5010-10T (9), L5015-10T (10), L7010-23T (19), L7015-10T (35)
+float Kd = 0.01;           // L5010-10T (1), L5015-10T (1), L7010-23T (3), L7015-10T (3)
 float Ki = 0.1;         // useless 
 float tau_limit = 19.;  // N.m, L5010-10T (0.26x50), L5015-10T (0.38x50), L7010-23T (0.61x30), L7015-10T (1x30)
 float columb_fric = 0.25;  // Columb Friction, N.m, L5010-10T (0.25), L5015-10T (0.25), L7010-23T (2), L7015-10T (2)
@@ -231,13 +233,16 @@ int main() {
                 break;
             case 2:
                 // q_des = M_PI/6; qd_des = 0.;
+                
                 // q_des = (M_PI/4) * sin((2*M_PI/16)*dt*i);  // cycle = 16 sec
                 // qd_des = (M_PI/4) * (M_PI*dt/8) * cos((2*M_PI/16)*dt*i);
-                q_des = (M_PI/2) * sin((2*M_PI/400000)*i);
-                qd_des = (M_PI/2) * (M_PI/200000) * cos((2*M_PI/400000)*i);
+
+                q_des = (M_PI/4) * sin((2*M_PI/80000000000)*i);
+                qd_des = (M_PI/4) * (M_PI/40000000000) * cos((2*M_PI/80000000000)*i);
                 tau_des = pd_control(q_des, q_data, qd_des, qd_data);
-                tau_des += sgn(qd_des)*columb_fric;
-                tau_des += gravity_compensation(q_data);
+                
+                // tau_des += sgn(qd_des)*columb_fric;
+                // tau_des += gravity_compensation(q_data);
                 break;
             case 3:
                 // switch to position control to keep at the unstable position
@@ -256,9 +261,14 @@ int main() {
         }
         tau_des = fminf(fmaxf(tau_des, -tau_limit), tau_limit);  // clip torque for safety
 
-        // CAN 1, joint A
+        // CAN 1, joint 4/5/6
+        // CAN 3, joint 1/2/3
         _canCommand.tau_a_des[0] = tau_des;
-
+        // for (int i = 0; i < 3; i++) {
+        //     _canCommand.tau_a_des[i] = tau_des;
+        //     _canCommand.tau_c_des[i] = tau_des;
+        // }
+        
 
         // -------------transmit----------------
         // copy command to UDP tx, run, receive all sensor data from UDP rx

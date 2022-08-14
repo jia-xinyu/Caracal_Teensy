@@ -31,7 +31,7 @@ float min_a[3] = {0, 0, 0}; float max_a[3] = {0, 0, 0};
 float min_b[3] = {0, 0, 0}; float max_b[3] = {0, 0, 0};
 float min_c[3] = {0, 0, 0}; float max_c[3] = {0, 0, 0};
 // tranmission ratio
-float ratio[3] = {50, 1, 1};
+float ratio[3] = {1, 1, 1};
 
 // [TO DO] EStop
 void estop() {
@@ -59,7 +59,7 @@ void pack_torque_cmd(struct motor_args *args_m) {
   // joint a
   for (int i = 0; i < 3; i++) {
     args_m->joint_CMD.tau_a_des[i] = args_m->joint_CMD.tau_a_des[i] * side_a[i] / ratio[0];
-    iqControl = (args_m->joint_CMD.tau_a_des[i]) * CURRENT_SCALING;
+    iqControl = (args_m->joint_CMD.tau_a_des[i]) * CURRENT_L5010;
     args_m->setpoints_a[i].id = 0x141+ 0;
     args_m->setpoints_a[i].buf[4] = iqControl&0xff;
     args_m->setpoints_a[i].buf[5] = (iqControl>>8)&0xff;
@@ -75,7 +75,7 @@ void pack_torque_cmd(struct motor_args *args_m) {
   // joint b
   for (int i = 0; i < 3; i++) {
     args_m->joint_CMD.tau_b_des[i] = args_m->joint_CMD.tau_b_des[i] * side_b[i] / ratio[1];
-    iqControl = (args_m->joint_CMD.tau_b_des[i]) * CURRENT_SCALING;
+    iqControl = (args_m->joint_CMD.tau_b_des[i]) * CURRENT_L5010;
     args_m->setpoints_b[i].id = 0x141+ 1;
     args_m->setpoints_b[i].buf[4] = iqControl&0xff;
     args_m->setpoints_b[i].buf[5] = (iqControl>>8)&0xff;
@@ -91,7 +91,7 @@ void pack_torque_cmd(struct motor_args *args_m) {
   // joint c
   for (int i = 0; i < 3; i++) {
     args_m->joint_CMD.tau_c_des[i] = args_m->joint_CMD.tau_c_des[i] * side_c[i] / ratio[2] ;
-    iqControl = (args_m->joint_CMD.tau_c_des[i]) * CURRENT_SCALING;
+    iqControl = (args_m->joint_CMD.tau_c_des[i]) * CURRENT_L5015;
     args_m->setpoints_c[i].id = 0x141+ 2;
     args_m->setpoints_c[i].buf[4] = iqControl&0xff;
     args_m->setpoints_c[i].buf[5] = (iqControl>>8)&0xff;
@@ -123,15 +123,15 @@ void unpack_reply(CAN_message_t rx_msgs, struct joint_data *data, int i) {
     switch (rx_msgs.id) {
       case 0x141:  // joint a
         data->qd_a[i] = (pspeed/ratio[0]) * DEG_TO_RADIAN * side_a[i];
-        data->tau_a[i] = ptorque * ratio[0] * side_a[i] / CURRENT_SCALING;
+        data->tau_a[i] = ptorque * ratio[0] * side_a[i] / CURRENT_L5010;
         break;
       case 0x142:  // joint b
         data->qd_b[i] = (pspeed/ratio[1]) * DEG_TO_RADIAN * side_b[i];
-        data->tau_b[i] = ptorque * ratio[1] * side_b[i] / CURRENT_SCALING;
+        data->tau_b[i] = ptorque * ratio[1] * side_b[i] / CURRENT_L5010;
         break;
       case 0x143:  // joint c
         data->qd_c[i] = (pspeed/ratio[2]) * DEG_TO_RADIAN * side_c[i];
-        data->tau_c[i] = ptorque * ratio[2] * side_c[i] / CURRENT_SCALING;
+        data->tau_c[i] = ptorque * ratio[2] * side_c[i] / CURRENT_L5015;
         break;
     }
 
