@@ -41,7 +41,7 @@ This repository functions as a hardware bridge between high-level controllers wi
 ## How to run #
 Here we take a laptop with Ubuntu 18.04 as a high-level controller. In principle the code is independend of the environment, so both Windows and Linux should be OK (not yet been tested).
 
-**1)** Clone this repository on your laptop. If you are using `GYEMS-RMD L5015-10T` motors, you can directly build the Arduino project in `3_Motor_CAN_UDP_RTOS` folder and then upload to Teensy; otherwise, configure correct [torque constant](https://github.com/Jarvis861/Caracal_Teensy/blob/3c5ba12216b3b84911c2a8483f05245a964b8384/3_Motor_CAN_UDP_RTOS/lib/RMD_Motor/RMD_Motor.hpp#L9-L13) and [reduction ratio](https://github.com/Jarvis861/Caracal_Teensy/blob/3c5ba12216b3b84911c2a8483f05245a964b8384/3_Motor_CAN_UDP_RTOS/lib/RMD_Motor/RMD_Motor.cpp#L34) first.
+**1)** Clone this repository on your laptop. If you are using `GYEMS-RMD L5015-10T` motors, you can directly build the Arduino project in `3_Motor_CAN_UDP_RTOS` folder and then upload to Teensy; otherwise, configure correct [torque constant](https://github.com/Jarvis861/Caracal_Teensy/blob/272aff3f582540428192a8780deb3a3c0985a43a/3_Motor_CAN_UDP_RTOS/lib/RMD_Motor/RMD_Motor.hpp#L10-L14) and [reduction ratio](https://github.com/Jarvis861/Caracal_Teensy/blob/272aff3f582540428192a8780deb3a3c0985a43a/3_Motor_CAN_UDP_RTOS/lib/RMD_Motor/RMD_Motor.cpp#L34) first.
 
 **2)** Connect all devices physically.
 
