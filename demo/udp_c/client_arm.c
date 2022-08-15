@@ -1,4 +1,10 @@
-// Client side implementation of UDP client-server model
+/*
+ * UDP client example - control 3/6/9 GYEMS-RMD motors
+
+ * Author: Jia, Xinyu
+ * Last modified: Jan 22, 2022
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -134,27 +140,17 @@ struct high2low *send_udp_cmd() {
 }
 
 
-// ------------control-----------------
-float m = 5;          // kg
-float g = 9.81;         // m/s^2
-float l = 0.25;         // m
-float Kp = 0.0051;          // L5010-10T (9), L5015-10T (10), L7010-23T (19), L7015-10T (35)
-float Kd = 0.01;           // L5010-10T (1), L5015-10T (1), L7010-23T (3), L7015-10T (3)
+// ------------ Parameters -----------------
+float Kp = 10;          // L5010-10T (9), L5015-10T (10), L7010-23T (19), L7015-10T (35)
+float Kd = 1;           // L5010-10T (1), L5015-10T (1), L7010-23T (3), L7015-10T (3)
 float Ki = 0.1;         // useless 
 float tau_limit = 19.;  // N.m, L5010-10T (0.26x50), L5015-10T (0.38x50), L7010-23T (0.61x30), L7015-10T (1x30)
-float columb_fric = 0.25;  // Columb Friction, N.m, L5010-10T (0.25), L5015-10T (0.25), L7010-23T (2), L7015-10T (2)
-float k = 1.;           // energy shaping
-float b = 0.1;          // energy shaping
 
 float dt = 0.002;       // designed control dt, 500Hz
-int runTime = 10000;    // sec
+int runTime = 5000;     // sec
 
-// === Method 1 ===
-float gravity_compensation(float q_data) {
-    return m * g * l* sin(q_data);
-}
 
-// === Method 2 ===
+// --- Position Control ---
 int sgn (float val) {
     return (0.<val) - (val<0.);  // 1 for positive, 0 for 0, -1 for negative
 }
@@ -172,25 +168,8 @@ float pd_control(float q_des, float q_data, float qd_des, float qd_data) {
     return tau_des;
 }
 
-// === Method 3 ===
-float total_energy(float position, float velocity) {
-    return 0.5*m*pow((l*velocity),2) + m*g*l*(1.0-cos(position));  // kinetic + potential
-}
-float energy_shaping(float pos, float vel) {
-    float current_energy = total_energy(pos, vel);
-    float des_energy = total_energy(M_PI, 0.);  // push the system towards the upright position
 
-    float tau_des = 0.;
-    if (pos==0. && vel==0.) {
-        tau_des = 0.1 * tau_limit;  // start torque
-    } else {
-        tau_des = -k*vel*(current_energy - des_energy) + b*vel;
-    }
-    return tau_des;
-}
-
-
-// ----------------Main function------------------
+// ---------------- Main function ------------------
 int main() {
     init_udp_client();
     memset(&_canCommand, 0, sizeof(struct joint_command));
@@ -208,92 +187,92 @@ int main() {
 		exit(0);
 	}
 
-    float q_data = 0.; float qd_data = 0.; float tau_data = 0.;
+    float q_data_A[3]; float qd_data_A[3]; float tau_data_A[3];  // joint a
+    float q_data_B[3]; float qd_data_B[3]; float tau_data_B[3];  // joint b
+    float q_data_C[3]; float qd_data_C[3]; float tau_data_C[3];  // joint c
+
     bool firstRun = true;   // get data before send command
     int n = runTime/dt;
 
     float meas_dt = 0.;     // measured dt
     struct timeval start_loop, finish_loop;  // timer
 
-    for (int i = 0; i < n; i++) {
+    for (int T = 0; T < n; T++) {
         gettimeofday(&start_loop, NULL);
         
         // get pointers
         struct high2low *udp_tx = send_udp_cmd();
         struct low2high *udp_rx = recv_udp_data();
 
-        // ------------input command--------------
-        float q_des = 0.; float qd_des = 0.; float tau_des = 0.;  // flush command
-        switch (2) {
-            case 0:
-                tau_des = 0;  // measure Columb friction
-                break;
-            case 1:
-                tau_des = gravity_compensation(q_data);
-                break;
-            case 2:
-                // q_des = M_PI/6; qd_des = 0.;
-                
-                // q_des = (M_PI/4) * sin((2*M_PI/16)*dt*i);  // cycle = 16 sec
-                // qd_des = (M_PI/4) * (M_PI*dt/8) * cos((2*M_PI/16)*dt*i);
+        // ------------ compute --------------
+        // flush command
+        float q_des_A[3]; float qd_des_A[3]; float tau_des_A[3];
+        float q_des_B[3]; float qd_des_B[3]; float tau_des_B[3];
+        float q_des_C[3]; float qd_des_C[3]; float tau_des_C[3];
 
-                q_des = (M_PI/4) * sin((2*M_PI/80000000000)*i);
-                qd_des = (M_PI/4) * (M_PI/40000000000) * cos((2*M_PI/80000000000)*i);
-                tau_des = pd_control(q_des, q_data, qd_des, qd_data);
-                
-                // tau_des += sgn(qd_des)*columb_fric;
-                // tau_des += gravity_compensation(q_data);
-                break;
-            case 3:
-                // switch to position control to keep at the unstable position
-                if (fabs(q_data) < (M_PI-0.2)) {
-                    q_des = q_data; qd_des = 0.;
-                    tau_des = pd_control(q_des, q_data, qd_des, qd_data);
-                    tau_des += gravity_compensation(q_data) + sgn(qd_des)*columb_fric;
-                } else {
-                    tau_des = energy_shaping(q_data, qd_data);
-                }
-                break;
+        // q_des = M_PI/6; qd_des = 0.;
+        float q_des = (M_PI/2) * sin((2*M_PI/1000000)*T);
+        float qd_des = (M_PI/2) * (M_PI/500000) * cos((2*M_PI/1000000)*T);
+
+        for (int i = 0; i < 3; i++) {
+            q_des_A[i] = q_des; qd_des_A[i] = qd_des;
+            q_des_B[i] = q_des; qd_des_B[i] = qd_des;
+            q_des_C[i] = q_des; qd_des_C[i] = qd_des;
+
+            tau_des_A[i] = pd_control(q_des_A[i], q_data_A[i], qd_des_A[i], qd_data_A[i]);
+            tau_des_B[i] = pd_control(q_des_B[i], q_data_B[i], qd_des_B[i], qd_data_B[i]);
+            tau_des_C[i] = pd_control(q_des_C[i], q_data_C[i], qd_des_C[i], qd_data_C[i]);
+
+            // clip torque for safety
+            tau_des_A[i] = fminf(fmaxf(tau_des_A[i], -tau_limit), tau_limit);
+            tau_des_B[i] = fminf(fmaxf(tau_des_B[i], -tau_limit), tau_limit);
+            tau_des_C[i] = fminf(fmaxf(tau_des_C[i], -tau_limit), tau_limit);
         }
+
         if (firstRun) {
-            tau_des = 0.;
+            for (int i = 0; i < 3; i++) {
+                tau_des_A[i] = 0.; tau_des_B[i] = 0.; tau_des_C[i] = 0.;
+            }
             firstRun = false;
         }
-        tau_des = fminf(fmaxf(tau_des, -tau_limit), tau_limit);  // clip torque for safety
 
-        // CAN 1, joint 4/5/6
-        // CAN 3, joint 1/2/3
-        _canCommand.tau_a_des[0] = tau_des;
-        // for (int i = 0; i < 3; i++) {
-        //     _canCommand.tau_a_des[i] = tau_des;
-        //     _canCommand.tau_c_des[i] = tau_des;
-        // }
-        
 
-        // -------------transmit----------------
+        // ------------input command--------------
+        // CAN 1, joint 4/5/6; CAN 2 NA; CAN 3, joint 1/2/3
+        for (int i = 0; i < 3; i++) {
+            _canCommand.tau_a_des[i] = tau_des_A[i]; // joint 1/4
+            _canCommand.tau_b_des[i] = tau_des_B[i]; // joint 2/5
+            _canCommand.tau_c_des[i] = tau_des_C[i]; // joint 3/6
+        }
+
+        // ------------- transmit ----------------
         // copy command to UDP tx, run, receive all sensor data from UDP rx
         memcpy(&udp_tx->_joint_cmd, &_canCommand, sizeof(struct joint_command));
         UDP_client_run();
         memcpy(&_canData, &udp_rx->_joint_data, sizeof(struct joint_data));
 
+        // ------------ output data --------------
+        for (int i = 0; i < 3; i++) {
+            q_data_A[i] = _canData.q_a[i]; qd_data_A[i] = _canData.qd_a[i]; tau_data_A[i] = _canData.tau_a[i];
+            q_data_B[i] = _canData.q_b[i]; qd_data_B[i] = _canData.qd_b[i]; tau_data_B[i] = _canData.tau_b[i];
+            q_data_C[i] = _canData.q_c[i]; qd_data_C[i] = _canData.qd_c[i]; tau_data_C[i] = _canData.tau_c[i];
+        }
 
-        // ------------output data--------------
-        q_data = _canData.q_a[0];
-        qd_data = _canData.qd_a[0];
-        tau_data = _canData.tau_a[0];
 
-        // ------------print result--------------
+        // ------------ print result --------------
         #if 1
-        printf("[UDP-RT-TASK]: Send torque [%f]\n", tau_des);
-        printf("[UDP-RT-TASK]: Read position [%f], velocity [%f], torque [%f]\n", q_data, qd_data, tau_data);
+        // printf("[UDP-RT-TASK]: Send torque [%f]\n", tau_des);
+        // printf("[UDP-RT-TASK]: Read position [%f], velocity [%f], torque [%f]\n", q_data, qd_data, tau_data);
 		// #else
-        fprintf(fp, "%d %.3f %.3f %.3f %.3f %.3f %.3f \n", i, \
-			q_des, q_data, qd_des, qd_data, tau_des, tau_data);
-		#endif
+        int i = 2;  // CAN 1/2/3
+        fprintf(fp, "%d %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f %.3f\n", T, \
+            q_des_A[i], q_data_A[i], qd_des_A[i], qd_data_A[i], tau_des_A[i], tau_data_A[i], \
+            q_des_B[i], q_data_B[i], qd_des_B[i], qd_data_C[i], tau_des_B[i], tau_data_B[i], \
+            q_des_C[i], q_data_C[i], qd_des_C[i], qd_data_C[i], tau_des_C[i], tau_data_C[i]);
+        #endif
 
 
-        // ----------check frequency------------
-        i += 1;
+        // ---------- check frequency ------------
         int delay_time = dt * 1000000;  // microsecond, us
         // usleep(delay_time);
 

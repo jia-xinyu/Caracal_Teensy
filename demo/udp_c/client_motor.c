@@ -1,4 +1,10 @@
-// Client side implementation of UDP client-server model
+/*
+ * UDP client example - control a single GYEMS-RMD motor
+
+ * Author: Jia, Xinyu
+ * Last modified: Jan 22, 2022
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
