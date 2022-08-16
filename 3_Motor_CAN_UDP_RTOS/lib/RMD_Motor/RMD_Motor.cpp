@@ -75,7 +75,7 @@ void pack_torque_cmd(struct motor_args *args_m) {
   // joint b
   for (int i = 0; i < 3; i++) {
     args_m->joint_CMD.tau_b_des[i] = args_m->joint_CMD.tau_b_des[i] * side_b[i] / ratio[1];
-    iqControl = (args_m->joint_CMD.tau_b_des[i]) * CURRENT_L5010;
+    iqControl = (args_m->joint_CMD.tau_b_des[i]) * CURRENT_L5015;
     args_m->setpoints_b[i].id = 0x141+ 1;
     args_m->setpoints_b[i].buf[4] = iqControl&0xff;
     args_m->setpoints_b[i].buf[5] = (iqControl>>8)&0xff;

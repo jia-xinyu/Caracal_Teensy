@@ -144,7 +144,7 @@ struct high2low *send_udp_cmd() {
 float Kp = 10;          // L5010-10T (9), L5015-10T (10), L7010-23T (19), L7015-10T (35)
 float Kd = 1;           // L5010-10T (1), L5015-10T (1), L7010-23T (3), L7015-10T (3)
 float Ki = 0.1;         // useless 
-float tau_limit = 19.;  // N.m, L5010-10T (0.26x50), L5015-10T (0.38x50), L7010-23T (0.61x30), L7015-10T (1x30)
+float tau_limit = 13.;  // N.m, L5010-10T (0.26x50), L5015-10T (0.38x50), L7010-23T (0.61x30), L7015-10T (1x30)
 
 float dt = 0.002;       // designed control dt, 500Hz
 int runTime = 5000;     // sec
@@ -211,8 +211,8 @@ int main() {
         float q_des_C[3]; float qd_des_C[3]; float tau_des_C[3];
 
         // q_des = M_PI/6; qd_des = 0.;
-        float q_des = (M_PI/2) * sin((2*M_PI/1000000)*T);
-        float qd_des = (M_PI/2) * (M_PI/500000) * cos((2*M_PI/1000000)*T);
+        float q_des = (M_PI/2) * sin((2*M_PI/200000)*T);
+        float qd_des = (M_PI/2) * (M_PI/100000) * cos((2*M_PI/200000)*T);
 
         for (int i = 0; i < 3; i++) {
             q_des_A[i] = q_des; qd_des_A[i] = qd_des;
