@@ -1,9 +1,10 @@
-/*
- * UDP client example - control a single GYEMS-RMD motor
-
+/*!
+ * @file client_motor.c
+ * @brief UDP client example - control a single GYEMS-RMD motor
+ *
  * Author: Jia, Xinyu
  * Last modified: Jan 22, 2022
-*/
+ */
 
 #include <stdio.h>
 #include <stdlib.h>

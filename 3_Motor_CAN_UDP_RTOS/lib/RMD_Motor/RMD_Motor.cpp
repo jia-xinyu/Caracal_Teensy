@@ -1,10 +1,11 @@
-/*
- * Torque Control of 3 GYEMS-RMD Motors on a CAN BUS while 
+/*!
+ * @file RMD_Motor.cpp
+ * @brief Torque Control of 3 GYEMS-RMD Motors on a CAN BUS while 
  * Teensy 4.1 can support 3 CAN BUSes in total.
-
+ * 
  * Author: Jia, Xinyu
  * Last modified: Jan 22, 2022
-*/
+ */
 
 #include "RMD_Motor.hpp"
 
