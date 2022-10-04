@@ -13,8 +13,8 @@
 #define CURRENT_L5015 2700      // L5015-10T
 #define CURRENT_L5010 3800      // L5010-10T
 
-// #define ESTOP  // turn ESTOP on or off
-// #define PRINT_DATA  // turn print on or off
+#define ESTOP         // turn ESTOP on or off
+// #define PRINT_DATA    // turn print on or off
 // #define PRINT_ERROR
 
 // data struct for passing data

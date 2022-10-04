@@ -8,6 +8,8 @@
  */
 
 #include "RMD_Motor.hpp"
+#define  L  -2*M_PI
+#define  H   2*M_PI
 
 struct motor_args args_motor;
 
@@ -19,6 +21,10 @@ FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_32> can1;
 FlexCAN_T4<CAN2, RX_SIZE_64, TX_SIZE_32> can2;
 FlexCAN_T4<CAN3, RX_SIZE_64, TX_SIZE_32> can3;
 
+/*!
+ * direction, offset, limit are recommended to be defined in
+ * high-level controllers, instead here.
+ */
 // arm or leg coordinate should match the motor rotation direction
 float side_a[3] = {1, 1, 1};
 float side_b[3] = {1, 1, 1};
@@ -27,19 +33,14 @@ float side_c[3] = {1, 1, 1};
 float offset_a[3] = {0, 0, 0};
 float offset_b[3] = {0, 0, 0};
 float offset_c[3] = {0, 0, 0};
-// limit of joint angle
-float min_a[3] = {0, 0, 0}; float max_a[3] = {0, 0, 0};
-float min_b[3] = {0, 0, 0}; float max_b[3] = {0, 0, 0};
-float min_c[3] = {0, 0, 0}; float max_c[3] = {0, 0, 0};
+// rough limit of joint angle (-2pi ~ +2pi)
+float min_a[3] = {L, L, L}; float max_a[3] = {H, H, H};
+float min_b[3] = {L, L, L}; float max_b[3] = {H, H, H};
+float min_c[3] = {L, L, L}; float max_c[3] = {H, H, H};
+
 // tranmission ratio
 float ratio[3] = {50, 50, 50};
 
-// [TO DO] EStop
-void estop() {
-  #ifdef ESTOP
-
-  #endif
-}
 
 // Get CAN command pointer
 joint_command *get_can_command() {
@@ -242,17 +243,6 @@ void print_err(char action[], char info[]) {
   #endif
 }
 
-// ESTOP if over angle limit
-void angle_limit(struct motor_args *args_m) {
-  #ifdef ESTOP
-  for (int i = 0; i < 3; i++) {
-		if ((args_m->joint_DATA.q_a[i]<min_a[i]) || (args_m->joint_DATA.q_a[i]>max_a[i]))  estop();
-		if ((args_m->joint_DATA.q_b[i]<min_b[i]) || (args_m->joint_DATA.q_b[i]>max_b[i]))  estop();
-		if ((args_m->joint_DATA.q_c[i]<min_c[i]) || (args_m->joint_DATA.q_c[i]>max_c[i]))  estop();
-  }
-  #endif
-}
-
 void print_data(struct motor_args *args_m) {
   #ifdef PRINT_DATA
   Serial.println("position, velocity, torque of first joint on each 3 CAN BUS");
@@ -282,6 +272,20 @@ void copy_data(struct motor_args *args_m) {
     args_m->joint_DATA.tau_b[i] = can_rx[i].tau_b[i];
     args_m->joint_DATA.tau_c[i] = can_rx[i].tau_c[i];    
   }
+}
+
+// ESTOP if over angle limit
+void angle_limit(struct motor_args *args_m) {
+  #ifdef ESTOP
+  for (int i = 0; i < 3; i++) {
+		if ((args_m->joint_DATA.q_a[i]<min_a[i]) || (args_m->joint_DATA.q_a[i]>max_a[i]) ||
+      (args_m->joint_DATA.q_b[i]<min_b[i]) || (args_m->joint_DATA.q_b[i]>max_b[i]) ||
+      (args_m->joint_DATA.q_c[i]<min_c[i]) || (args_m->joint_DATA.q_c[i]>max_c[i])) {
+
+      args_m->joint_CMD.flags[i] = 0;   // will stop sending CAN messages 
+    }
+  }
+  #endif
 }
 
 // main function
@@ -326,18 +330,24 @@ void task_fun(struct motor_args *args_m) {
   print_data(args_m);
 
   //------------------------------------------------------------------------
-  // send msgs
-  can1.write(args_m->setpoints_a[0]);
-  can2.write(args_m->setpoints_a[1]);
-  can3.write(args_m->setpoints_a[2]);
+  // send msgs only CAN flags are true
+  // flags = true:  1. command from the high-level controller;
+  //                2. joint angle within the limits (-2pi ~2pi).
+  if (args_m->joint_CMD.flags[0] && args_m->joint_CMD.flags[1] 
+        && args_m->joint_CMD.flags[2]) {
 
-  can1.write(args_m->setpoints_b[0]);
-  can2.write(args_m->setpoints_b[1]);
-  can3.write(args_m->setpoints_b[2]);
+    can1.write(args_m->setpoints_a[0]);
+    can2.write(args_m->setpoints_a[1]);
+    can3.write(args_m->setpoints_a[2]);
 
-  can1.write(args_m->setpoints_c[0]);
-  can2.write(args_m->setpoints_c[1]);
-  can3.write(args_m->setpoints_c[2]);
+    can1.write(args_m->setpoints_b[0]);
+    can2.write(args_m->setpoints_b[1]);
+    can3.write(args_m->setpoints_b[2]);
+
+    can1.write(args_m->setpoints_c[0]);
+    can2.write(args_m->setpoints_c[1]);
+    can3.write(args_m->setpoints_c[2]);
+  }
 }
 
 // run CAN BUS in main.cpp

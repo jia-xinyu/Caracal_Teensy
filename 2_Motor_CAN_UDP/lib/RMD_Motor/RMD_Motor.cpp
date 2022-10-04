@@ -1,12 +1,15 @@
-/*
- * Torque Control of 3 GYEMS-RMD Motors on a CAN BUS while 
+/*!
+ * @file RMD_Motor.cpp
+ * @brief Torque Control of 3 GYEMS-RMD Motors on a CAN BUS while 
  * Teensy 4.1 can support 3 CAN BUSes in total.
-
+ * 
  * Author: Jia, Xinyu
  * Last modified: Jan 22, 2022
-*/
+ */
 
 #include "RMD_Motor.hpp"
+#define  L  -2*M_PI
+#define  H   2*M_PI
 
 struct motor_args args_motor;
 
@@ -18,6 +21,10 @@ FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_32> can1;
 FlexCAN_T4<CAN2, RX_SIZE_64, TX_SIZE_32> can2;
 FlexCAN_T4<CAN3, RX_SIZE_64, TX_SIZE_32> can3;
 
+/*!
+ * direction, offset, limit are recommended to be defined in
+ * high-level controllers, instead here.
+ */
 // arm or leg coordinate should match the motor rotation direction
 float side_a[3] = {1, 1, 1};
 float side_b[3] = {1, 1, 1};
@@ -26,19 +33,14 @@ float side_c[3] = {1, 1, 1};
 float offset_a[3] = {0, 0, 0};
 float offset_b[3] = {0, 0, 0};
 float offset_c[3] = {0, 0, 0};
-// limit of joint angle
-float min_a[3] = {0, 0, 0}; float max_a[3] = {0, 0, 0};
-float min_b[3] = {0, 0, 0}; float max_b[3] = {0, 0, 0};
-float min_c[3] = {0, 0, 0}; float max_c[3] = {0, 0, 0};
+// rough limit of joint angle (-2pi ~ +2pi)
+float min_a[3] = {L, L, L}; float max_a[3] = {H, H, H};
+float min_b[3] = {L, L, L}; float max_b[3] = {H, H, H};
+float min_c[3] = {L, L, L}; float max_c[3] = {H, H, H};
+
 // tranmission ratio
-float ratio[3] = {1, 1, 1};
+float ratio[3] = {50, 50, 50};
 
-// [TO DO] EStop
-void estop() {
-  #ifdef ESTOP
-
-  #endif
-}
 
 // Get CAN command pointer
 joint_command *get_can_command() {
@@ -59,7 +61,7 @@ void pack_torque_cmd(struct motor_args *args_m) {
   // joint a
   for (int i = 0; i < 3; i++) {
     args_m->joint_CMD.tau_a_des[i] = args_m->joint_CMD.tau_a_des[i] * side_a[i] / ratio[0];
-    iqControl = (args_m->joint_CMD.tau_a_des[i]) * CURRENT_SCALING;
+    iqControl = (args_m->joint_CMD.tau_a_des[i]) * CURRENT_L5010;
     args_m->setpoints_a[i].id = 0x141+ 0;
     args_m->setpoints_a[i].buf[4] = iqControl&0xff;
     args_m->setpoints_a[i].buf[5] = (iqControl>>8)&0xff;
@@ -75,7 +77,7 @@ void pack_torque_cmd(struct motor_args *args_m) {
   // joint b
   for (int i = 0; i < 3; i++) {
     args_m->joint_CMD.tau_b_des[i] = args_m->joint_CMD.tau_b_des[i] * side_b[i] / ratio[1];
-    iqControl = (args_m->joint_CMD.tau_b_des[i]) * CURRENT_SCALING;
+    iqControl = (args_m->joint_CMD.tau_b_des[i]) * CURRENT_L5015;
     args_m->setpoints_b[i].id = 0x141+ 1;
     args_m->setpoints_b[i].buf[4] = iqControl&0xff;
     args_m->setpoints_b[i].buf[5] = (iqControl>>8)&0xff;
@@ -91,7 +93,7 @@ void pack_torque_cmd(struct motor_args *args_m) {
   // joint c
   for (int i = 0; i < 3; i++) {
     args_m->joint_CMD.tau_c_des[i] = args_m->joint_CMD.tau_c_des[i] * side_c[i] / ratio[2] ;
-    iqControl = (args_m->joint_CMD.tau_c_des[i]) * CURRENT_SCALING;
+    iqControl = (args_m->joint_CMD.tau_c_des[i]) * CURRENT_L5015;
     args_m->setpoints_c[i].id = 0x141+ 2;
     args_m->setpoints_c[i].buf[4] = iqControl&0xff;
     args_m->setpoints_c[i].buf[5] = (iqControl>>8)&0xff;
@@ -123,15 +125,15 @@ void unpack_reply(CAN_message_t rx_msgs, struct joint_data *data, int i) {
     switch (rx_msgs.id) {
       case 0x141:  // joint a
         data->qd_a[i] = (pspeed/ratio[0]) * DEG_TO_RADIAN * side_a[i];
-        data->tau_a[i] = ptorque * ratio[0] * side_a[i] / CURRENT_SCALING;
+        data->tau_a[i] = ptorque * ratio[0] * side_a[i] / CURRENT_L5010;
         break;
       case 0x142:  // joint b
         data->qd_b[i] = (pspeed/ratio[1]) * DEG_TO_RADIAN * side_b[i];
-        data->tau_b[i] = ptorque * ratio[1] * side_b[i] / CURRENT_SCALING;
+        data->tau_b[i] = ptorque * ratio[1] * side_b[i] / CURRENT_L5010;
         break;
       case 0x143:  // joint c
         data->qd_c[i] = (pspeed/ratio[2]) * DEG_TO_RADIAN * side_c[i];
-        data->tau_c[i] = ptorque * ratio[2] * side_c[i] / CURRENT_SCALING;
+        data->tau_c[i] = ptorque * ratio[2] * side_c[i] / CURRENT_L5015;
         break;
     }
 
@@ -241,17 +243,6 @@ void print_err(char action[], char info[]) {
   #endif
 }
 
-// ESTOP if over angle limit
-void angle_limit(struct motor_args *args_m) {
-  #ifdef ESTOP
-  for (int i = 0; i < 3; i++) {
-		if ((args_m->joint_DATA.q_a[i]<min_a[i]) || (args_m->joint_DATA.q_a[i]>max_a[i]))  estop();
-		if ((args_m->joint_DATA.q_b[i]<min_b[i]) || (args_m->joint_DATA.q_b[i]>max_b[i]))  estop();
-		if ((args_m->joint_DATA.q_c[i]<min_c[i]) || (args_m->joint_DATA.q_c[i]>max_c[i]))  estop();
-  }
-  #endif
-}
-
 void print_data(struct motor_args *args_m) {
   #ifdef PRINT_DATA
   Serial.println("position, velocity, torque of first joint on each 3 CAN BUS");
@@ -281,6 +272,20 @@ void copy_data(struct motor_args *args_m) {
     args_m->joint_DATA.tau_b[i] = can_rx[i].tau_b[i];
     args_m->joint_DATA.tau_c[i] = can_rx[i].tau_c[i];    
   }
+}
+
+// ESTOP if over angle limit
+void angle_limit(struct motor_args *args_m) {
+  #ifdef ESTOP
+  for (int i = 0; i < 3; i++) {
+		if ((args_m->joint_DATA.q_a[i]<min_a[i]) || (args_m->joint_DATA.q_a[i]>max_a[i]) ||
+      (args_m->joint_DATA.q_b[i]<min_b[i]) || (args_m->joint_DATA.q_b[i]>max_b[i]) ||
+      (args_m->joint_DATA.q_c[i]<min_c[i]) || (args_m->joint_DATA.q_c[i]>max_c[i])) {
+
+      args_m->joint_CMD.flags[i] = 0;   // will stop sending CAN messages 
+    }
+  }
+  #endif
 }
 
 // main function
@@ -325,18 +330,24 @@ void task_fun(struct motor_args *args_m) {
   print_data(args_m);
 
   //------------------------------------------------------------------------
-  // send msgs
-  can1.write(args_m->setpoints_a[0]);
-  can2.write(args_m->setpoints_a[1]);
-  can3.write(args_m->setpoints_a[2]);
+  // send msgs only CAN flags are true
+  // flags = true:  1. command from the high-level controller;
+  //                2. joint angle within the limits (-2pi ~2pi).
+  if (args_m->joint_CMD.flags[0] && args_m->joint_CMD.flags[1] 
+        && args_m->joint_CMD.flags[2]) {
 
-  can1.write(args_m->setpoints_b[0]);
-  can2.write(args_m->setpoints_b[1]);
-  can3.write(args_m->setpoints_b[2]);
+    can1.write(args_m->setpoints_a[0]);
+    can2.write(args_m->setpoints_a[1]);
+    can3.write(args_m->setpoints_a[2]);
 
-  can1.write(args_m->setpoints_c[0]);
-  can2.write(args_m->setpoints_c[1]);
-  can3.write(args_m->setpoints_c[2]);
+    can1.write(args_m->setpoints_b[0]);
+    can2.write(args_m->setpoints_b[1]);
+    can3.write(args_m->setpoints_b[2]);
+
+    can1.write(args_m->setpoints_c[0]);
+    can2.write(args_m->setpoints_c[1]);
+    can3.write(args_m->setpoints_c[2]);
+  }
 }
 
 // run CAN BUS in main.cpp

@@ -6,12 +6,15 @@
 
 #define RPM_TO_RPS 0.104720     // convert rpm to radian per sec
 #define DEG_TO_RADIAN 0.017453  // PI/180, convert degree to radian
-// #define CURRENT_SCALING 43      // X8-Pro-6:1, mannual: 62.06 = 2048/33A
-#define CURRENT_SCALING 165     // L7015-10T
-// #define CURRENT_SCALING 3800    // L5010-10T
 
-// #define ESTOP  // turn ESTOP on or off
-// #define PRINT_DATA  // turn print on or off
+#define CURRENT_X8_PRO 43       // X8-Pro-6:1, mannual: 62.06 = 2048/33A
+#define CURRENT_L7015 165       // L7015-10T
+#define CURRENT_L7010 120       // L7010-23T
+#define CURRENT_L5015 2700      // L5015-10T
+#define CURRENT_L5010 3800      // L5010-10T
+
+#define ESTOP         // turn ESTOP on or off
+// #define PRINT_DATA    // turn print on or off
 // #define PRINT_ERROR
 
 // data struct for passing data
