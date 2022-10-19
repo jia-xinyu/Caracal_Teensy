@@ -58,10 +58,24 @@ void pack_torque_cmd(struct motor_args *args_m) {
   // range: -2048~2048, corresponding to the actual torque current range -33A~33A
   // pack ints into the can buffer
   int16_t iqControl;
-  // joint a
+  int current_scale;
+
   for (int i = 0; i < 3; i++) {
+    switch (i) {
+      case 0:
+        current_scale = CURRENT_L5010;  // CAN 1
+        break;
+      case 1:
+        current_scale = CURRENT_L5015;  // CAN 2
+        break;
+      case 2:
+        current_scale = CURRENT_L5015;  // CAN 3
+        break;
+    }
+
+    // joint a
     args_m->joint_CMD.tau_a_des[i] = args_m->joint_CMD.tau_a_des[i] * side_a[i] / ratio[0];
-    iqControl = (args_m->joint_CMD.tau_a_des[i]) * CURRENT_L5010;
+    iqControl = (args_m->joint_CMD.tau_a_des[i]) * current_scale;
     args_m->setpoints_a[i].id = 0x141+ 0;
     args_m->setpoints_a[i].buf[4] = iqControl&0xff;
     args_m->setpoints_a[i].buf[5] = (iqControl>>8)&0xff;
@@ -72,12 +86,10 @@ void pack_torque_cmd(struct motor_args *args_m) {
     args_m->setpoints_a[i].buf[3] = 0;
     args_m->setpoints_a[i].buf[6] = 0;
     args_m->setpoints_a[i].buf[7] = 0;
-  }
 
-  // joint b
-  for (int i = 0; i < 3; i++) {
+    // joint b
     args_m->joint_CMD.tau_b_des[i] = args_m->joint_CMD.tau_b_des[i] * side_b[i] / ratio[1];
-    iqControl = (args_m->joint_CMD.tau_b_des[i]) * CURRENT_L5015;
+    iqControl = (args_m->joint_CMD.tau_b_des[i]) * current_scale;
     args_m->setpoints_b[i].id = 0x141+ 1;
     args_m->setpoints_b[i].buf[4] = iqControl&0xff;
     args_m->setpoints_b[i].buf[5] = (iqControl>>8)&0xff;
@@ -88,12 +100,10 @@ void pack_torque_cmd(struct motor_args *args_m) {
     args_m->setpoints_b[i].buf[3] = 0;
     args_m->setpoints_b[i].buf[6] = 0;
     args_m->setpoints_b[i].buf[7] = 0;
-  }
 
-  // joint c
-  for (int i = 0; i < 3; i++) {
+    // joint c
     args_m->joint_CMD.tau_c_des[i] = args_m->joint_CMD.tau_c_des[i] * side_c[i] / ratio[2] ;
-    iqControl = (args_m->joint_CMD.tau_c_des[i]) * CURRENT_L5015;
+    iqControl = (args_m->joint_CMD.tau_c_des[i]) * current_scale;
     args_m->setpoints_c[i].id = 0x141+ 2;
     args_m->setpoints_c[i].buf[4] = iqControl&0xff;
     args_m->setpoints_c[i].buf[5] = (iqControl>>8)&0xff;
@@ -116,8 +126,21 @@ void unpack_reply(CAN_message_t rx_msgs, struct joint_data *data, int i) {
   int64_t pposition;
   int16_t pspeed;
   int16_t ptorque;
+  int current_scale;
 
   if (rx_msgs.buf[0] == 0x9C)	{
+    switch (i) {
+      case 0:
+        current_scale = CURRENT_L5010;  // CAN 1
+        break;
+      case 1:
+        current_scale = CURRENT_L5015;  // CAN 2
+        break;
+      case 2:
+        current_scale = CURRENT_L5015;  // CAN 3
+        break;
+    }
+
     // feedback speed, torque
     pspeed = (rx_msgs.buf[5]<<8)|(rx_msgs.buf[4]);
     ptorque = (rx_msgs.buf[3]<<8)|(rx_msgs.buf[2]);
@@ -125,15 +148,15 @@ void unpack_reply(CAN_message_t rx_msgs, struct joint_data *data, int i) {
     switch (rx_msgs.id) {
       case 0x141:  // joint a
         data->qd_a[i] = (pspeed/ratio[0]) * DEG_TO_RADIAN * side_a[i];
-        data->tau_a[i] = ptorque * ratio[0] * side_a[i] / CURRENT_L5010;
+        data->tau_a[i] = ptorque * ratio[0] * side_a[i] / current_scale;
         break;
       case 0x142:  // joint b
         data->qd_b[i] = (pspeed/ratio[1]) * DEG_TO_RADIAN * side_b[i];
-        data->tau_b[i] = ptorque * ratio[1] * side_b[i] / CURRENT_L5010;
+        data->tau_b[i] = ptorque * ratio[1] * side_b[i] / current_scale;
         break;
       case 0x143:  // joint c
         data->qd_c[i] = (pspeed/ratio[2]) * DEG_TO_RADIAN * side_c[i];
-        data->tau_c[i] = ptorque * ratio[2] * side_c[i] / CURRENT_L5015;
+        data->tau_c[i] = ptorque * ratio[2] * side_c[i] / current_scale;
         break;
     }
 
