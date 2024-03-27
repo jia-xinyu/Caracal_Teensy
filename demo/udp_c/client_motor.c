@@ -271,6 +271,9 @@ int main() {
         // CAN 1, joint A
         _canCommand.tau_a_des[0] = tau_des;
 
+        for (int i = 0; i < 3; i++) {
+            _canCommand.flags[i] = true;
+        }
 
         // -------------transmit----------------
         // copy command to UDP tx, run, receive all sensor data from UDP rx

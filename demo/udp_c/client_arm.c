@@ -244,6 +244,7 @@ int main() {
             _canCommand.tau_a_des[i] = tau_des_A[i]; // joint 1/4
             _canCommand.tau_b_des[i] = tau_des_B[i]; // joint 2/5
             _canCommand.tau_c_des[i] = tau_des_C[i]; // joint 3/6
+            _canCommand.flags[i] = true;
         }
 
         // ------------- transmit ----------------
