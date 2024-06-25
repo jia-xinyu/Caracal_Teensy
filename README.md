@@ -8,7 +8,7 @@
 </div>
 
 ## Introduction #
-This repository functions as a hardware bridge between high-level controllers with Ethernet Ports and [GYEMS-RMD](http://www.gyems.cn/product.html) motors with CAN BUS Protocol. You can directly send torque commands to up to 9 motors and receive feedback data, such as position, velocity and actual torque. In the future, other sensor data will be also intergrated here in the same way.
+This repository functions as a hardware bridge between high-level controllers with Ethernet Ports and [GYEMS-RMD](https://www.myactuator.com/) motors with CAN BUS Protocol. You can directly send torque commands to up to 9 motors and receive feedback data, such as position, velocity and actual torque. In the future, other sensor data will be also intergrated here in the same way.
 
 * `1_Motor_CAN` : CAN BUS protocol of motors to write command and read data
 * `2_Motor_CAN_UDP` : ~, UDP protocol to communicate with high-level controllers
@@ -74,20 +74,20 @@ You can also find **Matlab** version of the high-level code. However, Matlab can
 ## Control Examples
 **1)** Gravity Compensation
 <div align="center">
-<img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = mgl \sin(\theta)">
-</div> 
+<img src="https://latex.codecogs.com/svg.image?\tau_{des}=mgl\sin(\theta)">
+</div>
 
 **2)** Position Control
 <div align="center">
-<img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = \tau_{ff} %2B K_{p} ( \theta_{des} - \theta ) %2B K_{d} ( \dot{\theta}_{des} - \dot{\theta} )">
+<img src="https://latex.codecogs.com/svg.image?\tau_{des}=\tau_{ff}&plus;K_{p}(\theta_{des}-\theta)&plus;K_{d}(\dot{\theta}_{des}-\dot{\theta})">
 </div> 
 
 **3)** Energy Shaping Control (Inverted Pendulum)
 <div align="center">
-<img src="https://render.githubusercontent.com/render/math?math=E(\theta, \dot{\theta}) = \frac{1}{2}ml^2\dot{\theta}^2 %2B mgl \left( 1 - \cos(\theta) \right)">
+<img src="https://latex.codecogs.com/svg.image?E(\theta,\dot{\theta})=\frac{1}{2}ml^2\dot{\theta}^2&plus;mgl\left(1-\cos(\theta)\right)">
 </div> 
 <div align="center">
-<img src="https://render.githubusercontent.com/render/math?math=\tau_{des} = k \dot{\theta} \left( E_{des} - E \right) %2B b \dot{\theta}, \quad k &gt; 0, \quad b &gt; 0">
+<img src="https://latex.codecogs.com/svg.image?\tau_{des}=k\dot{\theta}\left(E_{des}-E\right)&plus;b\dot{\theta},\quad&space;k&gt;0,\quad&space;b&gt;0">
 </div> 
 
 * From left to right: Running Actuator; Step Response; Gravity Compensation; Position Control
